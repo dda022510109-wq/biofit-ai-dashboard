@@ -77,11 +77,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "BioFit AI — 맞춤형 AI 안전 운동 처방" },
+      { name: "description", content: "내 신체 메트릭 분석 및 맞춤형 AI 안전 운동 처방을 제공하는 프리미엄 피트니스 대시보드." },
+      { name: "author", content: "BioFit AI" },
+      { property: "og:title", content: "BioFit AI — 맞춤형 AI 안전 운동 처방" },
+      { property: "og:description", content: "신체 대사 분석 · AI 안전 운동 처방 · 트레이닝 타이머 · 피트니스 다이어리를 한 곳에서." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ko" className="dark">
       <head>
         <HeadContent />
       </head>
