@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Award,
   Sparkle,
+  LogOut,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,6 +37,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { AuthContainer } from "@/components/auth-components";
 
 export const Route = createFileRoute("/")({
   component: BioFitApp,
@@ -136,40 +139,86 @@ function analyze(m: Metrics): Analysis {
 
 /* ------------------------------- Shell -------------------------------- */
 function BioFitApp() {
+  const { user, loading, login, signup, logout, saveUserData } = useAuth();
+  
   const [tab, setTab] = useState("enroll");
   const [sound, setSound] = useState(true);
-  const [metrics, setMetrics] = useState<Metrics>({
+  
+  const defaultMetrics: Metrics = {
     gender: "여성",
     age: 29,
     height: 162.5,
     weight: 58.2,
     activity: "가벼운 활동 (주 1~3회 가벼운 스포츠/걷기)",
     goal: "체중 감량 & 군살 제거 (지방 연소 극대화)",
-  });
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [diary, setDiary] = useState<
-    { date: string; workout: string; minutes: number; calories: number }[]
-  >([
+  };
+
+  const defaultDiary = [
     { date: "2026-07-11", workout: "인터벌 러닝", minutes: 32, calories: 312 },
     { date: "2026-07-12", workout: "코어 & 모빌리티", minutes: 25, calories: 180 },
     { date: "2026-07-13", workout: "휴식 (액티브 리커버리)", minutes: 15, calories: 65 },
     { date: "2026-07-14", workout: "전신 서킷", minutes: 40, calories: 402 },
-  ]);
+  ];
+
+  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics);
+  const [diary, setDiary] = useState<any[]>(defaultDiary);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+
+  // 유저 정보 로드 및 상태 복구
+  useEffect(() => {
+    if (user) {
+      if (user.metrics) {
+        setMetrics(user.metrics);
+      } else {
+        setMetrics(defaultMetrics);
+      }
+      if (user.diary) {
+        setDiary(user.diary);
+      } else {
+        setDiary(defaultDiary);
+      }
+    }
+  }, [user]);
 
   const handleAnalyze = () => {
     const a = analyze(metrics);
     setAnalysis(a);
     setTab("metabolic");
     if (sound) beep(880, 0.08);
+
+    if (user) {
+      saveUserData({ metrics });
+    }
+
     toast.success("AI 분석이 완료되었습니다", {
       description: `BMI ${a.bmi} · TDEE ${a.tdee} kcal · 부상 위험 ${a.riskScore}%`,
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">사용자 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <AuthContainer onLogin={login} onSignup={signup} />
+        <Toaster position="top-center" theme="dark" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <BackgroundFX />
-      <TopBar sound={sound} setSound={setSound} />
+      <TopBar sound={sound} setSound={setSound} user={user} onLogout={logout} />
       <main className="relative mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-5">
@@ -196,7 +245,11 @@ function BioFitApp() {
             <DiaryTab
               diary={diary}
               onAdd={(entry) => {
-                setDiary((d) => [...d, entry]);
+                const updatedDiary = [...diary, entry];
+                setDiary(updatedDiary);
+                if (user) {
+                  saveUserData({ diary: updatedDiary });
+                }
                 if (sound) beep(660, 0.08);
                 toast.success("세션이 다이어리에 기록되었습니다");
               }}
@@ -239,7 +292,17 @@ function TabTrigger({ value, icon, label }: { value: string; icon: React.ReactNo
 }
 
 /* ------------------------------- Top Bar ------------------------------ */
-function TopBar({ sound, setSound }: { sound: boolean; setSound: (v: boolean) => void }) {
+function TopBar({
+  sound,
+  setSound,
+  user,
+  onLogout,
+}: {
+  sound: boolean;
+  setSound: (v: boolean) => void;
+  user?: any;
+  onLogout?: () => void;
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -274,14 +337,30 @@ function TopBar({ sound, setSound }: { sound: boolean; setSound: (v: boolean) =>
           >
             {sound ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4" />}
           </button>
-          <Badge className="gap-2 border-primary/30 bg-primary/10 px-3 py-1.5 text-primary hover:bg-primary/15">
+          <Badge className="hidden gap-2 border-primary/30 bg-primary/10 px-3 py-1.5 text-primary hover:bg-primary/15 sm:flex">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            <span className="hidden text-xs font-medium sm:inline">AI 임상 모델 연동 완료</span>
-            <span className="text-xs font-medium sm:hidden">AI 연동</span>
+            <span className="text-xs font-medium">AI 임상 모델 연동 완료</span>
           </Badge>
+
+          {/* User Profile & Logout Button */}
+          {user && (
+            <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1.5 pl-4 backdrop-blur-md">
+              <span className="text-xs font-semibold text-foreground/90 max-w-[80px] truncate">
+                {user.name}님
+              </span>
+              <div className="h-3 w-px bg-border/80" />
+              <button
+                onClick={onLogout}
+                className="rounded-full p-1 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all"
+                title="로그아웃"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
@@ -607,9 +686,10 @@ function PrescriptionTab({ metrics, analysis }: { metrics: Metrics; analysis: An
             <CardContent className="space-y-2">
               {day.exercises.map((ex) => (
                 <div key={ex.name} className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-background/40 p-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{ex.name}</div>
-                    <div className="text-xs text-muted-foreground">{ex.sets}</div>
+                    {ex.desc && <div className="mt-0.5 text-xs text-muted-foreground">{ex.desc}</div>}
+                    <div className="mt-1 text-xs text-muted-foreground/80 font-mono">{ex.sets}</div>
                   </div>
                   <Badge variant="secondary" className="shrink-0 gap-1 border-primary/20 bg-primary/10 text-primary">
                     <ShieldCheck className="h-3 w-3" /> {ex.safe}
@@ -679,58 +759,58 @@ function buildPlan(m: Metrics) {
   const base = m.goal.startsWith("근비대")
     ? [
         { title: "상체 · 푸시 데이", duration: 55, exercises: [
-          { name: "인클라인 덤벨 프레스", sets: "4 x 8-10 reps · 90s rest", safe: "어깨 ≤ 80°" },
-          { name: "케이블 체스트 플라이", sets: "3 x 12 reps", safe: "가슴 스트레칭 제한" },
-          { name: "오버헤드 트라이셉스", sets: "3 x 12 reps", safe: "팔꿈치 안정" },
+          { name: "인클라인 덤벨 프레스", sets: "4 x 8-10 reps · 90s rest", safe: "어깨 ≤ 80°", desc: "윗가슴 타겟. 벤치를 30도 정도로 눕히고 덤벨을 수직으로 밀어 올립니다. 내릴 때 팔꿈치가 몸통 각도 80도 아래로 오도록 통제해 어깨 관절의 부담을 덜어주세요." },
+          { name: "케이블 체스트 플라이", sets: "3 x 12 reps", safe: "가슴 스트레칭 제한", desc: "가슴 안쪽 타겟. 케이블을 둥근 궤적으로 가슴 중앙으로 모아줍니다. 팔을 이완시킬 때 손끝이 어깨 뒤쪽 라인으로 과도하게 넘어가지 않도록 통제하며 수행합니다." },
+          { name: "오버헤드 트라이셉스", sets: "3 x 12 reps", safe: "팔꿈치 안정", desc: "삼두근 장두 강화. 덤벨이나 케이블 손잡이를 머리 뒤로 내릴 때 팔꿈치를 귀 양옆에 고정하고 벌어지지 않게 유지한 상태에서 아래팔만 위로 펴줍니다." },
         ]},
         { title: "하체 · 안전 스쿼트", duration: 60, exercises: [
-          { name: "고블릿 스쿼트", sets: "4 x 10 reps · 120s rest", safe: "무릎 ≤ 90°" },
-          { name: "루마니안 데드리프트", sets: "4 x 8 reps", safe: "허리 중립" },
-          { name: "레그 프레스", sets: "3 x 12 reps", safe: "가동 부분 사용" },
+          { name: "고블릿 스쿼트", sets: "4 x 10 reps · 120s rest", safe: "무릎 ≤ 90°", desc: "대퇴사두근 및 둔근 자극. 덤벨을 가슴 앞쪽에 타이트하게 쥐고 상체를 세워 척추 정렬을 유지합니다. 무릎이 발끝 방향을 향하도록 벌려주며 90도 까지만 내려갑니다." },
+          { name: "루마니안 데드리프트", sets: "4 x 8 reps", safe: "허리 중립", desc: "후면 사슬(대퇴이두, 둔근, 기립근) 강화. 무릎을 가볍게 굽힌 채 골반을 뒤로 밀어내는 힙힌지를 활용합니다. 허리가 굽지 않는 범위까지만 바를 밀착해 내립니다." },
+          { name: "레그 프레스", sets: "3 x 12 reps", safe: "가동 부분 사용", desc: "대퇴사두근 및 엉덩이 강화. 발판을 밀 때 무릎을 완전히 다 펴서 잠그지(Lock-out) 않고, 내릴 때 꼬리뼈가 발판 무게에 밀려 들리지 않도록 등받이에 골반을 밀착합니다." },
         ]},
         { title: "상체 · 풀 데이", duration: 50, exercises: [
-          { name: "랫 풀다운", sets: "4 x 10 reps", safe: "견갑 하강" },
-          { name: "시티드 로우", sets: "3 x 12 reps", safe: "몸통 고정" },
-          { name: "페이스 풀", sets: "3 x 15 reps", safe: "회전근개 강화" },
+          { name: "랫 풀다운", sets: "4 x 10 reps", safe: "견갑 하강", desc: "광배근 강화. 가슴을 쇄골 방향으로 하늘을 보듯 열어두고 바를 내릴 때 날개뼈를 먼저 하강시키며 팔꿈치를 옆구리 쪽으로 수직 견인합니다." },
+          { name: "시티드 로우", sets: "3 x 12 reps", safe: "몸통 고정", desc: "등 중앙 및 능형근 타겟. 발을 지탱하고 몸통을 고정한 상태에서 손잡이를 아랫배 쪽으로 당깁니다. 날개뼈를 등 뒤로 접어 수축하고 어깨가 위로 솟지 않게 내립니다." },
+          { name: "페이스 풀", sets: "3 x 15 reps", safe: "회전근개 강화", desc: "어깨 후면 및 회전근개 케어. 로프를 코/이마 방향으로 당기면서 양팔을 바깥으로 돌려 외회전시켜 줍니다. 승모근 개입을 줄이기 위해 팔꿈치 높이를 유지하세요." },
         ]},
       ]
     : m.goal.startsWith("체력")
     ? [
         { title: "인터벌 러닝", duration: 40, exercises: [
-          { name: "웜업 조깅", sets: "8분 Z2", safe: "심박 65%" },
-          { name: "1분 온 / 2분 오프 × 6", sets: "18분", safe: "Z4 상한" },
-          { name: "쿨다운 워크", sets: "5분", safe: "Z1" },
+          { name: "웜업 조깅", sets: "8분 Z2", safe: "심박 65%", desc: "심장과 관절 웜업. 옆사람과 편안히 대화할 수 있는 가벼운 강도로 천천히 달리며 관절 활액 분비를 유도합니다." },
+          { name: "1분 온 / 2분 오프 × 6", sets: "18분", safe: "Z4 상한", desc: "심폐 강화 및 체력 극대화. 1분 동안 전력 질주에 가까운 속도로 달린 뒤, 2분 동안은 가벼운 걷기나 느린 조깅으로 호흡을 다듬는 것을 6회 반복합니다." },
+          { name: "쿨다운 워크", sets: "5분", safe: "Z1", desc: "회복 유도. 뜀걸음을 완전히 멈추지 않고 평보로 천천히 걸으며 심박수를 안전 영역으로 낮추고 하체에 쏠린 혈액 순환을 돕습니다." },
         ]},
         { title: "템포 라이드", duration: 45, exercises: [
-          { name: "스테디 카디오", sets: "30분 Z2-Z3", safe: "대화 가능" },
-          { name: "코어 서킷", sets: "10분", safe: "허리 중립" },
+          { name: "스테디 카디오", sets: "30분 Z2-Z3", safe: "대화 가능", desc: "지속성 심폐 운동. 실내 자전거 등 유산소 장비에서 땀이 송글송글 맺히고 숨이 차지만 대화는 유지할 수 있는 일정 템포를 지속합니다." },
+          { name: "코어 서킷", sets: "10분", safe: "허리 중립", desc: "코어 안정화. 플랭크, 버드독 등으로 구성된 서킷. 운동 중 허리가 바닥으로 주저앉거나 과도하게 아치형으로 꺾이지 않도록 코어 텐션을 꽉 쥐어 유지합니다." },
         ]},
       ]
     : m.goal.startsWith("재활")
     ? [
         { title: "모빌리티 & 코어", duration: 30, exercises: [
-          { name: "고관절 CARs", sets: "2 x 5 회전", safe: "통증 0" },
-          { name: "데드버그", sets: "3 x 10 reps", safe: "허리 밀착" },
-          { name: "글루트 브릿지", sets: "3 x 12 reps", safe: "골반 중립" },
+          { name: "고관절 CARs", sets: "2 x 5 회전", safe: "통증 0", desc: "고관절 가동 범위 확대. 네발기기 자세 혹은 선 자세에서 한쪽 다리를 들어올려 안쪽/바깥쪽으로 원을 긋듯 천천히 돌립니다. 통증이 절대 없는 안전 영역 내에서만 수행합니다." },
+          { name: "데드버그", sets: "3 x 10 reps", safe: "허리 밀착", desc: "골반 및 요추 안정화. 하늘을 보고 누워 팔다리를 교차하며 뻗습니다. 이때 동작 내내 허리가 바닥에서 뜨지 않도록 배꼽을 바닥 쪽으로 강하게 눌러줍니다." },
+          { name: "글루트 브릿지", sets: "3 x 12 reps", safe: "골반 중립", desc: "둔근 활성화 및 허리 통증 개선. 등을 대고 누워 무릎을 굽힌 뒤 발뒤꿈치로 지면을 밀어 골반을 들어올립니다. 골반을 너무 높이 들어 허리가 꺾이지 않게 주의합니다." },
         ]},
         { title: "안전 근력 · 하체", duration: 35, exercises: [
-          { name: "체어 스쿼트", sets: "3 x 10 reps", safe: "무릎 ≤ 60°" },
-          { name: "월 슬라이드", sets: "3 x 8 reps", safe: "어깨 무통" },
+          { name: "체어 스쿼트", sets: "3 x 10 reps", safe: "무릎 ≤ 60°", desc: "하체 기초 근력 회복. 의자 앞에 선 상태로 엉덩이를 의자 끝에 스치듯 내리며 앉았다가 발바닥 전체로 지면을 지탱하여 일어납니다. 무릎 굽힘을 최소화합니다." },
+          { name: "월 슬라이드", sets: "3 x 8 reps", safe: "어깨 무통", desc: "어깨 안정성 강화. 벽에 기대어 등과 팔꿈치를 벽면에 밀착한 후 만세를 하듯 팔을 슬라이딩하며 올렸다 내립니다. 통증이 발생하는 지점 이전까지만 가동합니다." },
         ]},
       ]
     : [
         { title: "전신 지방 연소 서킷", duration: 45, exercises: [
-          { name: "케틀벨 스윙", sets: "4 x 15 reps", safe: "허리 중립" },
-          { name: "런지 워크", sets: "3 x 20 걸음", safe: "무릎 ≤ 90°" },
-          { name: "마운틴 클라이머", sets: "3 x 40초", safe: "어깨 고정" },
+          { name: "케틀벨 스윙", sets: "4 x 15 reps", safe: "허리 중립", desc: "전신 칼로리 연소. 둔근과 햄스트링의 폭발적인 힌지 팝을 이용하여 케틀벨을 밀어올립니다. 팔로 케틀벨을 당기는 것이 아니며 엉덩이 힘으로 튕겨내는 원리입니다." },
+          { name: "런지 워크", sets: "3 x 20 걸음", safe: "무릎 ≤ 90°", desc: "하체 탄력 및 밸런스. 한 걸음씩 앞으로 걸어가며 앉아줍니다. 앞다리 무릎이 발끝보다 너무 앞으로 튀어나가지 않게 뒤꿈치에 체중을 싣고 각도를 90도 내로 조절합니다." },
+          { name: "마운틴 클라이머", sets: "3 x 40초", safe: "어깨 고정", desc: "코어 및 고강도 유산소. 푸쉬업 자세에서 양다리를 교차하며 가슴 쪽으로 빠르게 당겨 올립니다. 상체가 흔들리지 않게 양손으로 바닥을 밀고 엉덩이 높이를 제어합니다." },
         ]},
         { title: "인터벌 유산소 (HIIT)", duration: 30, exercises: [
-          { name: "타바타 × 4 라운드", sets: "20s 온 / 10s 오프", safe: "Z4 상한" },
-          { name: "쿨다운 스트레칭", sets: "6분", safe: "정적 유지" },
+          { name: "타바타 × 4 라운드", sets: "20s 온 / 10s 오프", safe: "Z4 상한", desc: "단시간 고효율 체지방 연소. 버피나 스쿼트 점프 등의 전신 맨몸 운동을 20초간 한계치 속도로 수행한 후 10초간 완전 휴식하는 고강도 트레이닝입니다." },
+          { name: "쿨다운 스트레칭", sets: "6분", safe: "정적 유지", desc: "근육 이완 및 진정. 격렬히 뭉친 하체와 척추 근육들을 늘려주는 요가/스트레칭 동작을 동작당 20~30초간 길게 유지하면서 깊은 호흡으로 근육을 이완시킵니다." },
         ]},
         { title: "액티브 리커버리", duration: 25, exercises: [
-          { name: "빠르게 걷기", sets: "20분 Z2", safe: "심박 65%" },
-          { name: "폼롤링", sets: "5분", safe: "통증 회피" },
+          { name: "빠르게 걷기", sets: "20분 Z2", safe: "심박 65%", desc: "피로 물질 제거 유산소. 가벼운 땀이 날 정도의 활기찬 걸음으로 일정 시간 걷습니다. 뛰지 않고 관절 충격을 피해 신진대사를 순환시키는 목적입니다." },
+          { name: "폼롤링", sets: "5분", safe: "통증 회피", desc: "근막 자가 이완(SMR). 폼롤러를 허벅지, 종아리, 등 아래에 두고 천천히 체중을 실어 문질러 줍니다. 통증이 너무 심한 곳은 직접 압박하지 않고 주변부 위주로 풀어냅니다." },
         ]},
       ];
   return base;
