@@ -81,10 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "내 신체 메트릭 분석 및 맞춤형 AI 안전 운동 처방을 제공하는 프리미엄 피트니스 대시보드." },
       { name: "author", content: "BioFit AI" },
       { property: "og:title", content: "BioFit AI — 맞춤형 AI 안전 운동 처방" },
-      { property: "og:description", content: "신체 대사 분석 · AI 안전 운동 처방 · 트레이닝 타이머 · 피트니스 다이어리를 한 곳에서." },
+      { property: "og:description", content: "내 신체 메트릭 분석 및 맞춤형 AI 안전 운동 처방을 제공하는 프리미엄 피트니스 대시보드." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "BioFit AI — 맞춤형 AI 안전 운동 처방" },
+      { name: "twitter:description", content: "내 신체 메트릭 분석 및 맞춤형 AI 안전 운동 처방을 제공하는 프리미엄 피트니스 대시보드." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d82287a5-27a7-48d0-bee4-2980b42acad6/id-preview-4e37c50d--21ac26e3-91f6-4e21-9c83-b88000214fc8.lovable.app-1784098750123.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d82287a5-27a7-48d0-bee4-2980b42acad6/id-preview-4e37c50d--21ac26e3-91f6-4e21-9c83-b88000214fc8.lovable.app-1784098750123.png" },
     ],
     links: [
       {
