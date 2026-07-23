@@ -24,6 +24,8 @@ import {
   Award,
   Sparkle,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -954,17 +956,71 @@ function DiaryTab({
 }) {
   const [workout, setWorkout] = useState("전신 서킷");
   const [minutes, setMinutes] = useState(30);
+
+  // 달력 관련 상태
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
   const totalMinutes = diary.reduce((s, d) => s + d.minutes, 0);
   const totalCalories = diary.reduce((s, d) => s + d.calories, 0);
   const streak = diary.length;
 
   const add = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    onAdd({ date: today, workout, minutes, calories: Math.round(minutes * 9.5) });
+    onAdd({
+      date: selectedDate,
+      workout,
+      minutes,
+      calories: Math.round(minutes * 9.5),
+    });
   };
+
+  // 월별 이동
+  const prevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+  const nextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  // 날짜 구하기 보조 함수
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay();
+
+  // 달력 날짜 목록 구성 (이전달 잔여 및 현재달 포함)
+  const calendarCells = [];
+  
+  // 1일의 시작 요일 전까지 빈 공간 채우기
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarCells.push(null);
+  }
+  
+  // 날짜 데이터 매핑
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarCells.push(new Date(year, month, d));
+  }
+
+  const formatDateString = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  // 특정 날짜의 운동 기록 검색
+  const getWorkoutsForDate = (dateStr: string) => {
+    return diary.filter((item) => item.date === dateStr);
+  };
+
+  // 선택한 날짜에 필터된 세션 목록
+  const selectedSessions = diary.filter((e) => e.date === selectedDate);
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
+      {/* 왼쪽 / 중간: 통계 카드 및 달력 뷰 */}
       <div className="space-y-6 lg:col-span-2">
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard icon={<Flame className="h-4 w-4" />} label="누적 칼로리" value={`${totalCalories.toLocaleString()} kcal`} />
@@ -972,39 +1028,150 @@ function DiaryTab({
           <StatCard icon={<TrendingUp className="h-4 w-4" />} label="부상 Zero 스트릭" value={`${streak} 일`} tone="primary" />
         </div>
 
+        {/* 캘린더 카드 */}
         <Card className="border-border/60 bg-card/70 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-base">최근 세션</CardTitle>
-            <CardDescription>완료한 트레이닝 기록</CardDescription>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">훈련 캘린더</CardTitle>
+                <CardDescription>달력에서 날짜를 선택해 일지 추가 및 조회를 하세요.</CardDescription>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={prevMonth} aria-label="이전 달">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[80px] text-center text-sm font-semibold">
+                  {year}년 {month + 1}월
+                </span>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={nextMonth} aria-label="다음 달">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* 요일 헤더 */}
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground mb-2">
+              <div className="text-destructive">일</div>
+              <div>월</div>
+              <div>화</div>
+              <div>수</div>
+              <div>목</div>
+              <div>금</div>
+              <div className="text-primary">토</div>
+            </div>
+
+            {/* 날짜 그리드 */}
+            <div className="grid grid-cols-7 gap-1.5">
+              {calendarCells.map((cellDate, idx) => {
+                if (!cellDate) {
+                  return <div key={`empty-${idx}`} className="aspect-square bg-transparent" />;
+                }
+
+                const dateStr = formatDateString(cellDate);
+                const isSelected = selectedDate === dateStr;
+                const isToday = todayStr === dateStr;
+                const dayWorkouts = getWorkoutsForDate(dateStr);
+                const totalMinutesOnDay = dayWorkouts.reduce((sum, item) => sum + item.minutes, 0);
+
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => setSelectedDate(dateStr)}
+                    className={`relative flex aspect-square flex-col items-center justify-between rounded-lg p-1.5 border text-sm transition-all focus:outline-none focus:ring-1 focus:ring-primary ${
+                      isSelected
+                        ? "bg-primary border-primary text-primary-foreground shadow-[0_0_15px_-3px_var(--color-primary)] font-bold scale-[1.03]"
+                        : isToday
+                        ? "bg-card border-accent text-accent-foreground font-semibold"
+                        : "bg-background/20 border-border/40 hover:bg-muted/30"
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm">{cellDate.getDate()}</span>
+
+                    {/* 날짜 내부 훈련 표시 */}
+                    {dayWorkouts.length > 0 && (
+                      <div className="w-full flex flex-col items-center gap-0.5 mt-0.5">
+                        <span className={`text-[9px] leading-none px-1 py-0.5 rounded font-mono ${isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary font-semibold"}`}>
+                          {totalMinutesOnDay}분
+                        </span>
+                        <div className="flex gap-0.5 justify-center">
+                          {dayWorkouts.map((_, wIdx) => (
+                            <span
+                              key={wIdx}
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isSelected ? "bg-primary-foreground" : "bg-primary"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 선택된 날짜 상세 보기 */}
+        <Card className="border-border/60 bg-card/70 backdrop-blur">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">{selectedDate} 기록</CardTitle>
+                <CardDescription>해당 날짜에 완료한 운동 목록</CardDescription>
+              </div>
+              <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-xs">
+                총 {selectedSessions.length}개 세션
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {[...diary].reverse().map((e, i) => (
-              <div key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/40 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
-                    <Dumbbell className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{e.workout}</div>
-                    <div className="text-xs text-muted-foreground">{e.date}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <Badge variant="secondary" className="gap-1"><Timer className="h-3 w-3" />{e.minutes}분</Badge>
-                  <Badge variant="secondary" className="gap-1 border-primary/20 bg-primary/10 text-primary"><Flame className="h-3 w-3" />{e.calories} kcal</Badge>
-                </div>
+            {selectedSessions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                이 날짜에는 기록된 운동이 없습니다. 우측 폼에서 세션을 추가해 보세요!
               </div>
-            ))}
+            ) : (
+              selectedSessions.map((e, i) => (
+                <div key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/40 p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
+                      <Dumbbell className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{e.workout}</div>
+                      <div className="text-xs text-muted-foreground">{e.date}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <Badge variant="secondary" className="gap-1"><Timer className="h-3 w-3" />{e.minutes}분 소요</Badge>
+                    <Badge variant="secondary" className="gap-1 border-primary/20 bg-primary/10 text-primary"><Flame className="h-3 w-3" />{e.calories} kcal</Badge>
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-border/60 bg-card/70 backdrop-blur">
+      {/* 오른쪽: 세션 기록 추가 카드 */}
+      <Card className="border-border/60 bg-card/70 backdrop-blur self-start">
         <CardHeader>
           <CardTitle className="text-base">세션 기록 추가</CardTitle>
-          <CardDescription>오늘 완료한 운동을 저장하세요</CardDescription>
+          <CardDescription>
+            {selectedDate === todayStr ? "오늘" : selectedDate} 완료한 운동 기록
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">기록할 날짜</Label>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full bg-background/40"
+            />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">운동 종류</Label>
             <Select value={workout} onValueChange={setWorkout}>
