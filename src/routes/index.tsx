@@ -1029,7 +1029,14 @@ function MealTab({
   // 프리셋 선택 시 자동 입력
   const applyPreset = (key: string) => {
     setPreset(key);
-    if (key !== "직접 입력") {
+    if (key === "직접 입력") {
+      // 직접 입력 모드: 음식명 초기화 + 영양소 모두 0으로 리셋
+      setFood("");
+      setCalories(0);
+      setCarbs(0);
+      setProtein(0);
+      setFat(0);
+    } else {
       setFood(key);
       const p = MEAL_PRESETS[key];
       setCalories(p.calories);
@@ -1282,26 +1289,54 @@ function MealTab({
 
           {/* 음식 프리셋 */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">음식 선택 (빠른 입력)</Label>
-            <Select value={preset} onValueChange={applyPreset}>
-              <SelectTrigger className="bg-background/40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.keys(MEAL_PRESETS).map((k) => (
-                  <SelectItem key={k} value={k}>{k}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">음식 빠른 선택</Label>
+              <button
+                onClick={() => applyPreset("직접 입력")}
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-all ${
+                  preset === "직접 입력"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border/40 text-muted-foreground hover:border-primary/50 hover:text-primary"
+                }`}
+              >
+                ✏️ 직접 입력
+              </button>
+            </div>
+            {preset !== "직접 입력" && (
+              <Select value={preset} onValueChange={applyPreset}>
+                <SelectTrigger className="bg-background/40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.keys(MEAL_PRESETS).filter(k => k !== "직접 입력").map((k) => (
+                    <SelectItem key={k} value={k}>{k}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* 음식명 직접 입력 */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">음식명</Label>
+            <Label className={`text-xs font-semibold ${
+              preset === "직접 입력" ? "text-primary" : "text-muted-foreground"
+            }`}>
+              {preset === "직접 입력" ? "✏️ 음식명 직접 입력" : "음식명"}
+            </Label>
             <Input
               value={food}
               onChange={(e) => setFood(e.target.value)}
-              placeholder="예) 닭가슴살 샐러드"
-              className="bg-background/40"
+              placeholder={preset === "직접 입력" ? "예) 된장찌개, 삼겹살 2인분, 컵라면..." : "예) 닭가슴살 샐러드"}
+              className={`bg-background/40 transition-all ${
+                preset === "직접 입력"
+                  ? "border-primary ring-1 ring-primary/30 focus:ring-primary/60 placeholder:text-muted-foreground/60"
+                  : ""
+              }`}
+              autoFocus={preset === "직접 입력"}
             />
+            {preset === "직접 입력" && (
+              <p className="text-[11px] text-muted-foreground">
+                음식명을 직접 입력하고, 아래 칼로리와 영양소 정보를 채워주세요.
+              </p>
+            )}
           </div>
 
           {/* 매크로 입력 */}
