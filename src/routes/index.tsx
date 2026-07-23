@@ -968,7 +968,78 @@ function DiaryTab({
 
   const totalMinutes = diary.reduce((s, d) => s + d.minutes, 0);
   const totalCalories = diary.reduce((s, d) => s + d.calories, 0);
-  const streak = diary.length;
+
+  // ── 연속 운동 스트릭 계산 ──────────────────────────────────────
+  // 운동 기록이 있는 고유 날짜 집합
+  const workedDates = new Set(diary.map((d) => d.date));
+
+  // 오늘부터 역순으로 며칠 연속인지 계산
+  const calcStreak = () => {
+    let count = 0;
+    const cur = new Date();
+    // 오늘 운동 안 했으면 어제부터 계산 (당일 미완 허용)
+    const startFrom = workedDates.has(todayStr) ? 0 : 1;
+    for (let i = startFrom; i < 365; i++) {
+      const d = new Date(cur);
+      d.setDate(cur.getDate() - i);
+      const ds = d.toISOString().slice(0, 10);
+      if (workedDates.has(ds)) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  };
+  const streak = calcStreak();
+
+  // 최장 스트릭 계산
+  const calcLongestStreak = () => {
+    const sorted = Array.from(workedDates).sort();
+    let best = 0, cur2 = 0, prev: string | null = null;
+    for (const ds of sorted) {
+      if (prev) {
+        const prevD = new Date(prev);
+        prevD.setDate(prevD.getDate() + 1);
+        if (prevD.toISOString().slice(0, 10) === ds) {
+          cur2++;
+        } else {
+          cur2 = 1;
+        }
+      } else {
+        cur2 = 1;
+      }
+      if (cur2 > best) best = cur2;
+      prev = ds;
+    }
+    return best;
+  };
+  const longestStreak = calcLongestStreak();
+
+  // 최근 7일 현황
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const ds = d.toISOString().slice(0, 10);
+    return { date: ds, worked: workedDates.has(ds), isToday: ds === todayStr };
+  });
+
+  // 마일스톤 정의
+  const MILESTONES = [
+    { days: 3,   label: "3일",   emoji: "🌱" },
+    { days: 7,   label: "1주",   emoji: "🔥" },
+    { days: 14,  label: "2주",   emoji: "⚡" },
+    { days: 30,  label: "1달",   emoji: "💎" },
+    { days: 60,  label: "2달",   emoji: "👑" },
+    { days: 100, label: "100일", emoji: "🏆" },
+  ];
+  const nextMilestone = MILESTONES.find((m) => m.days > streak);
+  const prevMilestoneVal = MILESTONES.filter((m) => m.days <= streak).pop();
+  const progressToNext = nextMilestone
+    ? Math.round(((streak - (prevMilestoneVal?.days ?? 0)) / (nextMilestone.days - (prevMilestoneVal?.days ?? 0))) * 100)
+    : 100;
+
+  const totalDays = workedDates.size;
 
   // 체크 토글 핸들러
   const toggleWorkout = (name: string) => {
@@ -1050,10 +1121,107 @@ function DiaryTab({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* 왼쪽 / 중간: 통계 카드 및 달력 뷰 */}
       <div className="space-y-6 lg:col-span-2">
+
+        {/* ── 스트릭 히어로 카드 ───────────────────── */}
+        <Card className="relative overflow-hidden border-primary/40 bg-gradient-to-br from-card/90 via-primary/5 to-accent/5 backdrop-blur shadow-[0_0_40px_-10px_var(--color-primary)]">
+          {/* 배경 글로우 */}
+          <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
+
+          <CardContent className="relative py-6">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+
+              {/* 🔥 메인 스트릭 숫자 */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className={`text-7xl font-black tabular-nums leading-none ${
+                    streak > 0 ? "text-primary drop-shadow-[0_0_16px_var(--color-primary)]" : "text-muted-foreground"
+                  }`}>
+                    {streak}
+                  </div>
+                  <div className="absolute -right-2 -top-2 text-2xl">{streak > 0 ? "🔥" : "💤"}</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-foreground">일 연속 운동</div>
+                  <div className="text-xs text-muted-foreground">최장 기록: <span className="font-semibold text-accent">{longestStreak}일</span></div>
+                  <div className="text-xs text-muted-foreground">총 운동 일수: <span className="font-semibold text-foreground">{totalDays}일</span></div>
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-3">
+                {/* 최근 7일 습관 링 */}
+                <div>
+                  <div className="mb-2 text-xs font-semibold text-muted-foreground">최근 7일</div>
+                  <div className="flex gap-2">
+                    {last7Days.map(({ date, worked, isToday }) => (
+                      <div key={date} className="flex flex-col items-center gap-1">
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-base transition-all ${
+                            worked
+                              ? "border-primary bg-primary shadow-[0_0_10px_-2px_var(--color-primary)]"
+                              : isToday
+                              ? "border-accent/60 bg-accent/10 animate-pulse"
+                              : "border-border/40 bg-background/30"
+                          }`}
+                        >
+                          {worked ? "✓" : isToday ? "◉" : "·"}
+                        </div>
+                        <span className={`text-[9px] font-mono ${
+                          isToday ? "text-accent font-bold" : "text-muted-foreground"
+                        }`}>
+                          {["일","월","화","수","목","금","토"][new Date(date).getDay()]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 다음 마일스톤 프로그레스 */}
+                {nextMilestone && (
+                  <div>
+                    <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                      <span>다음 목표: <span className="font-semibold text-foreground">{nextMilestone.emoji} {nextMilestone.label} 연속</span></span>
+                      <span className="font-mono text-primary">{streak}/{nextMilestone.days}일</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-border/40">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-700"
+                        style={{ width: `${progressToNext}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 마일스톤 뱃지 행 */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {MILESTONES.map((m) => {
+                const achieved = longestStreak >= m.days;
+                return (
+                  <div
+                    key={m.days}
+                    title={`${m.label} 연속 달성`}
+                    className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
+                      achieved
+                        ? "border-primary/50 bg-primary/15 text-primary shadow-[0_0_8px_-2px_var(--color-primary)]"
+                        : "border-border/30 bg-muted/20 text-muted-foreground opacity-40"
+                    }`}
+                  >
+                    <span>{m.emoji}</span>
+                    <span>{m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 통계 요약 3칸 */}
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard icon={<Flame className="h-4 w-4" />} label="누적 칼로리" value={`${totalCalories.toLocaleString()} kcal`} />
           <StatCard icon={<Timer className="h-4 w-4" />} label="누적 운동 시간" value={`${totalMinutes} 분`} />
-          <StatCard icon={<TrendingUp className="h-4 w-4" />} label="부상 Zero 스트릭" value={`${streak} 일`} tone="primary" />
+          <StatCard icon={<TrendingUp className="h-4 w-4" />} label="총 운동 일수" value={`${totalDays} 일`} tone="primary" />
         </div>
 
         {/* 캘린더 카드 */}
