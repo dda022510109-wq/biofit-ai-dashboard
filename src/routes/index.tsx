@@ -738,30 +738,6 @@ function PrescriptionTab({ metrics, analysis }: { metrics: Metrics; analysis: An
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-card/70 backdrop-blur">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Safe Range 관절 각도</CardTitle>
-            <CardDescription>부상 방지 각도 상한</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { label: "무릎 굴곡", max: 90, unit: "°" },
-              { label: "어깨 외전", max: 80, unit: "°" },
-              { label: "허리 전굴", max: 45, unit: "°" },
-              { label: "발목 배측굴곡", max: 20, unit: "°" },
-            ].map((r) => (
-              <div key={r.label}>
-                <div className="mb-1.5 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{r.label}</span>
-                  <span className="font-semibold text-primary">≤ {r.max}{r.unit}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted/60">
-                  <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${(r.max / 120) * 100}%` }} />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
