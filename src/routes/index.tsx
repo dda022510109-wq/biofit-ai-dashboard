@@ -1418,7 +1418,7 @@ function DiaryTab({
     let best = 0, cur2 = 0, prev: string | null = null;
     for (const ds of sorted) {
       if (prev) {
-        const prevD = new Date(prev);
+        const prevD: Date = new Date(prev);
         prevD.setDate(prevD.getDate() + 1);
         if (prevD.toISOString().slice(0, 10) === ds) {
           cur2++;
