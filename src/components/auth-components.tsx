@@ -8,8 +8,8 @@ import { Shield, HeartPulse, Sparkles, User, Mail, Lock, CheckCircle2 } from "lu
 import { toast } from "sonner";
 
 interface AuthContainerProps {
-  onLogin: (email: string, password: string) => { success: boolean; message: string };
-  onSignup: (name: string, email: string, password: string) => { success: boolean; message: string };
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; message: string }> | { success: boolean; message: string };
+  onSignup: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }> | { success: boolean; message: string };
 }
 
 export function AuthContainer({ onLogin, onSignup }: AuthContainerProps) {
@@ -27,25 +27,28 @@ export function AuthContainer({ onLogin, onSignup }: AuthContainerProps) {
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
       toast.error("이메일과 비밀번호를 모두 입력해 주세요.");
       return;
     }
     setLoginLoading(true);
-    setTimeout(() => {
-      const res = onLogin(loginEmail, loginPassword);
-      setLoginLoading(false);
+    try {
+      const res = await onLogin(loginEmail, loginPassword);
       if (res.success) {
         toast.success(res.message);
       } else {
         toast.error(res.message);
       }
-    }, 800);
+    } catch (err: any) {
+      toast.error(err.message || "로그인 처리 중 에러가 발생했습니다.");
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
       toast.error("모든 필드를 입력해 주세요.");
@@ -60,15 +63,18 @@ export function AuthContainer({ onLogin, onSignup }: AuthContainerProps) {
       return;
     }
     setSignupLoading(true);
-    setTimeout(() => {
-      const res = onSignup(signupName, signupEmail, signupPassword);
-      setSignupLoading(false);
+    try {
+      const res = await onSignup(signupName, signupEmail, signupPassword);
       if (res.success) {
         toast.success(res.message);
       } else {
         toast.error(res.message);
       }
-    }, 800);
+    } catch (err: any) {
+      toast.error(err.message || "회원가입 처리 중 에러가 발생했습니다.");
+    } finally {
+      setSignupLoading(false);
+    }
   };
 
   return (
