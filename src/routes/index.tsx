@@ -26,6 +26,9 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  UtensilsCrossed,
+  Apple,
+  Trash2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -164,6 +167,7 @@ function BioFitApp() {
 
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics);
   const [diary, setDiary] = useState<any[]>(defaultDiary);
+  const [meals, setMeals] = useState<any[]>([]);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
   // 유저 정보 로드 및 상태 복구
@@ -178,6 +182,9 @@ function BioFitApp() {
         setDiary(user.diary);
       } else {
         setDiary(defaultDiary);
+      }
+      if ((user as any).meals) {
+        setMeals((user as any).meals);
       }
     }
   }, [user]);
@@ -223,12 +230,13 @@ function BioFitApp() {
       <TopBar sound={sound} setSound={setSound} user={user} onLogout={logout} />
       <main className="relative mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-5">
-            <TabTrigger value="enroll" icon={<User2 className="h-4 w-4" />} label="1. 신체 정보 입력" />
-            <TabTrigger value="metabolic" icon={<Activity className="h-4 w-4" />} label="2. 신체 대사 분석" />
-            <TabTrigger value="prescription" icon={<Dumbbell className="h-4 w-4" />} label="3. AI 안전 운동 처방전" />
-            <TabTrigger value="timer" icon={<Timer className="h-4 w-4" />} label="4. 트레이닝 타이머" />
-            <TabTrigger value="diary" icon={<CalendarDays className="h-4 w-4" />} label="5. 피트니스 다이어리" />
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-6">
+            <TabTrigger value="enroll" icon={<User2 className="h-4 w-4" />} label="1. 신체 정보" />
+            <TabTrigger value="metabolic" icon={<Activity className="h-4 w-4" />} label="2. 대사 분석" />
+            <TabTrigger value="prescription" icon={<Dumbbell className="h-4 w-4" />} label="3. 운동 처방" />
+            <TabTrigger value="timer" icon={<Timer className="h-4 w-4" />} label="4. 타이머" />
+            <TabTrigger value="diary" icon={<CalendarDays className="h-4 w-4" />} label="5. 운동 일지" />
+            <TabTrigger value="diet" icon={<UtensilsCrossed className="h-4 w-4" />} label="6. 식단 관리" />
           </TabsList>
 
           <TabsContent value="enroll" className="mt-6">
@@ -254,6 +262,25 @@ function BioFitApp() {
                 }
                 if (sound) beep(660, 0.08);
                 toast.success("세션이 다이어리에 기록되었습니다");
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="diet" className="mt-6">
+            <MealTab
+              meals={meals}
+              calorieGoal={analysis ? analysis.tdee : 2000}
+              onAdd={(entry) => {
+                const updated = [...meals, entry];
+                setMeals(updated);
+                if (user) saveUserData({ ...(user as any).meals, meals: updated } as any);
+                if (sound) beep(660, 0.08);
+                toast.success("식단이 기록되었습니다");
+              }}
+              onDelete={(idx) => {
+                const updated = meals.filter((_, i) => i !== idx);
+                setMeals(updated);
+                if (user) saveUserData({ meals: updated } as any);
+                toast.success("식단 기록이 삭제되었습니다");
               }}
             />
           </TabsContent>
@@ -942,6 +969,391 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
         <Input type="number" value={value} onChange={(e) => onChange(Math.max(1, +e.target.value))} className="text-center text-lg font-semibold" />
         <Button size="icon" variant="secondary" onClick={() => onChange(value + 5)}>+</Button>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------- Tab 6: Diet ----------------------------- */
+type MealEntry = {
+  date: string;
+  mealType: string;
+  food: string;
+  calories: number;
+  carbs: number;
+  protein: number;
+  fat: number;
+};
+
+const MEAL_PRESETS: Record<string, { calories: number; carbs: number; protein: number; fat: number }> = {
+  "닭가슴살 200g":        { calories: 220, carbs: 0,  protein: 44, fat: 4  },
+  "현미밥 1공기":         { calories: 310, carbs: 68, protein: 6,  fat: 2  },
+  "샐러드 (드레싱 무)":  { calories: 80,  carbs: 12, protein: 3,  fat: 1  },
+  "고구마 150g":          { calories: 140, carbs: 32, protein: 2,  fat: 0  },
+  "달걀 2개":             { calories: 140, carbs: 1,  protein: 12, fat: 10 },
+  "단백질 쉐이크":        { calories: 130, carbs: 5,  protein: 25, fat: 2  },
+  "바나나 1개":           { calories: 90,  carbs: 23, protein: 1,  fat: 0  },
+  "아몬드 30g":           { calories: 180, carbs: 6,  protein: 6,  fat: 15 },
+  "오트밀 50g":           { calories: 190, carbs: 34, protein: 7,  fat: 3  },
+  "두부 150g":            { calories: 120, carbs: 3,  protein: 13, fat: 6  },
+  "직접 입력":            { calories: 0,   carbs: 0,  protein: 0,  fat: 0  },
+};
+
+const MEAL_TYPE_ICONS: Record<string, string> = {
+  "아침": "🌅",
+  "점심": "☀️",
+  "저녁": "🌙",
+  "간식": "🍎",
+};
+
+function MealTab({
+  meals,
+  calorieGoal,
+  onAdd,
+  onDelete,
+}: {
+  meals: MealEntry[];
+  calorieGoal: number;
+  onAdd: (e: MealEntry) => void;
+  onDelete: (idx: number) => void;
+}) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [mealType, setMealType] = useState("아침");
+  const [preset, setPreset] = useState("닭가슴살 200g");
+  const [food, setFood] = useState("닭가슴살 200g");
+  const [calories, setCalories] = useState(220);
+  const [carbs, setCarbs] = useState(0);
+  const [protein, setProtein] = useState(44);
+  const [fat, setFat] = useState(4);
+
+  // 프리셋 선택 시 자동 입력
+  const applyPreset = (key: string) => {
+    setPreset(key);
+    if (key !== "직접 입력") {
+      setFood(key);
+      const p = MEAL_PRESETS[key];
+      setCalories(p.calories);
+      setCarbs(p.carbs);
+      setProtein(p.protein);
+      setFat(p.fat);
+    }
+  };
+
+  // 오늘의 식단 필터
+  const todayMeals = meals.filter((m) => m.date === selectedDate);
+  const todayCalories = todayMeals.reduce((s, m) => s + m.calories, 0);
+  const todayCarbs    = todayMeals.reduce((s, m) => s + m.carbs, 0);
+  const todayProtein  = todayMeals.reduce((s, m) => s + m.protein, 0);
+  const todayFat      = todayMeals.reduce((s, m) => s + m.fat, 0);
+
+  const caloriePercent = Math.min(Math.round((todayCalories / calorieGoal) * 100), 100);
+  const remaining = calorieGoal - todayCalories;
+
+  // 식단 유형별 그룹
+  const mealGroups = ["아침", "점심", "저녁", "간식"].map((type) => ({
+    type,
+    items: todayMeals.filter((m) => m.mealType === type),
+  }));
+
+  // 최근 7일 칼로리 히스토리
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const ds = d.toISOString().slice(0, 10);
+    const dayMeals = meals.filter((m) => m.date === ds);
+    return {
+      date: ds,
+      label: ["일","월","화","수","목","금","토"][d.getDay()],
+      isToday: ds === todayStr,
+      kcal: dayMeals.reduce((s, m) => s + m.calories, 0),
+    };
+  });
+  const maxKcal = Math.max(...last7.map((d) => d.kcal), calorieGoal);
+
+  const addMeal = () => {
+    if (!food.trim()) return;
+    onAdd({ date: selectedDate, mealType, food, calories, carbs, protein, fat });
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      {/* 왼쪽/중간 영역 */}
+      <div className="space-y-6 lg:col-span-2">
+
+        {/* 날짜 네비 + 칼로리 진행 카드 */}
+        <Card className="relative overflow-hidden border-primary/40 bg-gradient-to-br from-card/90 via-primary/5 to-accent/5 backdrop-blur shadow-[0_0_40px_-10px_var(--color-primary)]">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+          <CardContent className="relative py-6">
+            {/* 날짜 이동 */}
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate()-1); setSelectedDate(d.toISOString().slice(0,10)); }}
+                className="rounded-lg border border-border/40 bg-background/30 p-1.5 hover:bg-muted/30 transition-colors"
+              ><ChevronLeft className="h-4 w-4" /></button>
+              <div className="text-center">
+                <div className="text-sm font-bold">{selectedDate === todayStr ? "오늘" : selectedDate}</div>
+                <div className="text-xs text-muted-foreground">{selectedDate}</div>
+              </div>
+              <button
+                onClick={() => { const d = new Date(selectedDate); d.setDate(d.getDate()+1); setSelectedDate(d.toISOString().slice(0,10)); }}
+                className="rounded-lg border border-border/40 bg-background/30 p-1.5 hover:bg-muted/30 transition-colors"
+              ><ChevronRight className="h-4 w-4" /></button>
+            </div>
+
+            {/* 칼로리 게이지 */}
+            <div className="flex items-end gap-6">
+              <div>
+                <div className={`text-5xl font-black tabular-nums leading-none ${todayCalories > calorieGoal ? "text-destructive" : "text-primary drop-shadow-[0_0_12px_var(--color-primary)]"}`}>
+                  {todayCalories.toLocaleString()}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  kcal 섭취 / 목표 <span className="font-semibold text-foreground">{calorieGoal.toLocaleString()} kcal</span>
+                </div>
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{caloriePercent}% 달성</span>
+                  <span className={remaining >= 0 ? "text-primary font-semibold" : "text-destructive font-semibold"}>
+                    {remaining >= 0 ? `${remaining} kcal 남음` : `${Math.abs(remaining)} kcal 초과`}
+                  </span>
+                </div>
+                <div className="h-3 w-full overflow-hidden rounded-full bg-border/40">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${todayCalories > calorieGoal ? "bg-destructive" : "bg-gradient-to-r from-primary to-accent"}`}
+                    style={{ width: `${caloriePercent}%` }}
+                  />
+                </div>
+                {/* 매크로 요약 */}
+                <div className="flex gap-4 text-xs mt-2">
+                  {[
+                    { label: "탄수화물", val: todayCarbs, color: "text-blue-400", unit: "g" },
+                    { label: "단백질",   val: todayProtein, color: "text-green-400", unit: "g" },
+                    { label: "지방",     val: todayFat,  color: "text-yellow-400", unit: "g" },
+                  ].map(({ label, val, color, unit }) => (
+                    <div key={label} className="flex flex-col items-center">
+                      <span className={`text-base font-bold tabular-nums ${color}`}>{val}{unit}</span>
+                      <span className="text-muted-foreground">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 7일 칼로리 히스토리 바 차트 */}
+        <Card className="border-border/60 bg-card/70 backdrop-blur">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">주간 칼로리 추이</CardTitle>
+            <CardDescription>최근 7일간 일일 칼로리 섭취량</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-2 h-28">
+              {last7.map((day) => (
+                <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
+                  <span className="text-[9px] font-mono text-muted-foreground">{day.kcal > 0 ? day.kcal : ""}</span>
+                  <div className="w-full flex flex-col justify-end" style={{ height: "80px" }}>
+                    <div
+                      className={`w-full rounded-t-sm transition-all duration-500 ${
+                        day.isToday ? "bg-gradient-to-t from-primary to-accent shadow-[0_0_8px_-2px_var(--color-primary)]"
+                          : day.kcal > calorieGoal ? "bg-destructive/60"
+                          : "bg-primary/30"
+                      }`}
+                      style={{ height: day.kcal > 0 ? `${Math.max(4, Math.round((day.kcal / maxKcal) * 80))}px` : "4px" }}
+                    />
+                  </div>
+                  <span className={`text-[10px] font-mono ${day.isToday ? "text-accent font-bold" : "text-muted-foreground"}`}>
+                    {day.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* 목표 라인 범례 */}
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-0.5 w-6 border-t border-dashed border-primary/60" />
+              <span>목표 {calorieGoal.toLocaleString()} kcal</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 식단 목록 (식사 유형별) */}
+        <Card className="border-border/60 bg-card/70 backdrop-blur">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">{selectedDate === todayStr ? "오늘" : selectedDate} 식단 기록</CardTitle>
+                <CardDescription>식사 유형별 상세 내역</CardDescription>
+              </div>
+              <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary text-xs">
+                총 {todayMeals.length}건
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {mealGroups.every((g) => g.items.length === 0) ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                이 날짜에 기록된 식단이 없습니다. 우측에서 식사를 추가해 보세요!
+              </div>
+            ) : (
+              mealGroups.map(({ type, items }) =>
+                items.length === 0 ? null : (
+                  <div key={type}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base">{MEAL_TYPE_ICONS[type]}</span>
+                      <span className="text-sm font-semibold text-foreground">{type}</span>
+                      <span className="text-xs text-muted-foreground">
+                        · {items.reduce((s, m) => s + m.calories, 0)} kcal
+                      </span>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      {items.map((m, idx) => {
+                        const globalIdx = meals.findIndex(
+                          (meal) => meal.date === m.date && meal.mealType === m.mealType && meal.food === m.food && meal.calories === m.calories
+                        );
+                        return (
+                          <div key={idx} className="flex items-center justify-between rounded-lg border border-border/40 bg-background/30 px-3 py-2">
+                            <div className="flex items-center gap-3">
+                              <Apple className="h-4 w-4 text-primary shrink-0" />
+                              <div>
+                                <div className="text-sm font-medium">{m.food}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  탄 {m.carbs}g · 단 {m.protein}g · 지 {m.fat}g
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs gap-1 border-primary/20 bg-primary/10 text-primary">
+                                <Flame className="h-3 w-3" />{m.calories} kcal
+                              </Badge>
+                              <button
+                                onClick={() => onDelete(globalIdx)}
+                                className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                aria-label="삭제"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )
+              )
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 오른쪽: 식단 추가 카드 */}
+      <Card className="border-border/60 bg-card/70 backdrop-blur self-start">
+        <CardHeader>
+          <CardTitle className="text-base">식사 기록 추가</CardTitle>
+          <CardDescription>
+            {selectedDate === todayStr ? "오늘" : selectedDate} 섭취한 식사를 입력하세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* 날짜 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">날짜</Label>
+            <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-background/40" />
+          </div>
+
+          {/* 식사 유형 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">식사 유형</Label>
+            <div className="grid grid-cols-4 gap-1">
+              {["아침", "점심", "저녁", "간식"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setMealType(t)}
+                  className={`rounded-lg border py-2 text-xs font-semibold transition-all ${
+                    mealType === t
+                      ? "border-primary bg-primary text-primary-foreground shadow-[0_0_12px_-4px_var(--color-primary)]"
+                      : "border-border/40 bg-background/20 text-muted-foreground hover:bg-muted/20"
+                  }`}
+                >
+                  {MEAL_TYPE_ICONS[t]} {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 음식 프리셋 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">음식 선택 (빠른 입력)</Label>
+            <Select value={preset} onValueChange={applyPreset}>
+              <SelectTrigger className="bg-background/40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.keys(MEAL_PRESETS).map((k) => (
+                  <SelectItem key={k} value={k}>{k}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 음식명 직접 입력 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">음식명</Label>
+            <Input
+              value={food}
+              onChange={(e) => setFood(e.target.value)}
+              placeholder="예) 닭가슴살 샐러드"
+              className="bg-background/40"
+            />
+          </div>
+
+          {/* 매크로 입력 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">칼로리 (kcal)</Label>
+              <Input type="number" min={0} value={calories} onChange={(e) => setCalories(+e.target.value)} className="bg-background/40" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-blue-400">탄수화물 (g)</Label>
+              <Input type="number" min={0} value={carbs} onChange={(e) => setCarbs(+e.target.value)} className="bg-background/40 border-blue-400/30" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-green-400">단백질 (g)</Label>
+              <Input type="number" min={0} value={protein} onChange={(e) => setProtein(+e.target.value)} className="bg-background/40 border-green-400/30" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-yellow-400">지방 (g)</Label>
+              <Input type="number" min={0} value={fat} onChange={(e) => setFat(+e.target.value)} className="bg-background/40 border-yellow-400/30" />
+            </div>
+          </div>
+
+          {/* 미리보기 */}
+          {calories > 0 && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs space-y-1">
+              <div className="font-semibold text-primary">📋 추가 예정</div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>{MEAL_TYPE_ICONS[mealType]} {mealType} · {food}</span>
+                <span className="font-mono text-primary">{calories} kcal</span>
+              </div>
+              <div className="text-muted-foreground">탄 {carbs}g · 단 {protein}g · 지 {fat}g</div>
+            </div>
+          )}
+
+          <Button
+            onClick={addMeal}
+            disabled={!food.trim()}
+            className="w-full gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-[0_0_30px_-8px_var(--color-primary)] disabled:opacity-40"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            식단에 기록
+          </Button>
+
+          {/* 팁 */}
+          <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-primary space-y-1">
+            <div className="font-semibold">💡 식단 관리 팁</div>
+            <div className="text-muted-foreground leading-relaxed">
+              단백질을 체중 1kg당 1.5~2g 섭취하고, 칼로리 목표는 AI 대사 분석 탭의 TDEE를 기준으로 자동 설정됩니다.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
