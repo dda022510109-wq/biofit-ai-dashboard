@@ -230,13 +230,12 @@ function BioFitApp() {
       <TopBar sound={sound} setSound={setSound} user={user} onLogout={logout} />
       <main className="relative mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-6">
-            <TabTrigger value="enroll" icon={<User2 className="h-4 w-4" />} label="1. 신체 정보" />
-            <TabTrigger value="metabolic" icon={<Activity className="h-4 w-4" />} label="2. 대사 분석" />
-            <TabTrigger value="prescription" icon={<Dumbbell className="h-4 w-4" />} label="3. 운동 처방" />
-            <TabTrigger value="timer" icon={<Timer className="h-4 w-4" />} label="4. 타이머" />
-            <TabTrigger value="diary" icon={<CalendarDays className="h-4 w-4" />} label="5. 운동 일지" />
-            <TabTrigger value="diet" icon={<UtensilsCrossed className="h-4 w-4" />} label="6. 식단 관리" />
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-5">
+            <TabTrigger value="enroll" icon={<User2 className="h-4 w-4" />} label="신체 정보" />
+            <TabTrigger value="metabolic" icon={<Activity className="h-4 w-4" />} label="대사 분석" />
+            <TabTrigger value="prescription" icon={<Dumbbell className="h-4 w-4" />} label="운동 처방" />
+            <TabTrigger value="diary" icon={<CalendarDays className="h-4 w-4" />} label="운동 일지" />
+            <TabTrigger value="diet" icon={<UtensilsCrossed className="h-4 w-4" />} label="식단 관리" />
           </TabsList>
 
           <TabsContent value="enroll" className="mt-6">
@@ -247,9 +246,6 @@ function BioFitApp() {
           </TabsContent>
           <TabsContent value="prescription" className="mt-6">
             <PrescriptionTab metrics={metrics} analysis={analysis ?? analyze(metrics)} />
-          </TabsContent>
-          <TabsContent value="timer" className="mt-6">
-            <TimerTab sound={sound} />
           </TabsContent>
           <TabsContent value="diary" className="mt-6">
             <DiaryTab
