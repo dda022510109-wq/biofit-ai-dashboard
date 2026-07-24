@@ -576,8 +576,8 @@ function MetabolicTab({ metrics, analysis }: { metrics: Metrics; analysis: Analy
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2 border-border/60 bg-card/70 backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-base">심박존 & 트레이닝 강도 분포</CardTitle>
-            <CardDescription>목표 "{metrics.goal}"에 최적화된 강도 배분</CardDescription>
+            <CardTitle className="text-base">추천 운동 강도 비율</CardTitle>
+            <CardDescription>목표 "{metrics.goal}"에 맞춘 1단계(회복)부터 5단계(최대강도) 배분 가이드</CardDescription>
           </CardHeader>
           <CardContent>
             <ZoneChart goal={metrics.goal} />
@@ -634,7 +634,7 @@ function ZoneChart({ goal }: { goal: Goal }) {
       : goal.startsWith("컨디셔닝")
       ? [25, 35, 25, 10, 5]
       : [15, 30, 35, 15, 5];
-  const labels = ["Z1 회복", "Z2 유산소", "Z3 템포", "Z4 임계", "Z5 최대"];
+  const labels = ["1단계 회복", "2단계 지방연소", "3단계 보통강도", "4단계 고강도", "5단계 최대강도"];
   const colors = [
     "from-[oklch(0.68_0.17_235)]/70 to-[oklch(0.68_0.17_235)]",
     "from-primary/70 to-primary",
@@ -783,12 +783,12 @@ function buildPlan(m: Metrics) {
     : m.goal.startsWith("체력")
     ? [
         { title: "인터벌 러닝", duration: 40, exercises: [
-          { name: "웜업 조깅", sets: "8분 Z2", safe: "심박 65%", desc: "심장과 관절 웜업. 옆사람과 편안히 대화할 수 있는 가벼운 강도로 천천히 달리며 관절 활액 분비를 유도합니다." },
-          { name: "1분 온 / 2분 오프 × 6", sets: "18분", safe: "Z4 상한", desc: "심폐 강화 및 체력 극대화. 1분 동안 전력 질주에 가까운 속도로 달린 뒤, 2분 동안은 가벼운 걷기나 느린 조깅으로 호흡을 다듬는 것을 6회 반복합니다." },
-          { name: "쿨다운 워크", sets: "5분", safe: "Z1", desc: "회복 유도. 뜀걸음을 완전히 멈추지 않고 평보로 천천히 걸으며 심박수를 안전 영역으로 낮추고 하체에 쏠린 혈액 순환을 돕습니다." },
+          { name: "웜업 조깅", sets: "8분 (가벼운 강도)", safe: "심박 65%", desc: "심장과 관절 웜업. 옆사람과 편안히 대화할 수 있는 가벼운 강도로 천천히 달리며 관절 활액 분비를 유도합니다." },
+          { name: "1분 온 / 2분 오프 × 6", sets: "18분", safe: "고강도 안전", desc: "심폐 강화 및 체력 극대화. 1분 동안 전력 질주에 가까운 속도로 달린 뒤, 2분 동안은 가벼운 걷기나 느린 조깅으로 호흡을 다듬는 것을 6회 반복합니다." },
+          { name: "쿨다운 워크", sets: "5분", safe: "회복 강도", desc: "회복 유도. 뜀걸음을 완전히 멈추지 않고 평보로 천천히 걸으며 심박수를 안전 영역으로 낮추고 하체에 쏠린 혈액 순환을 돕습니다." },
         ]},
         { title: "템포 라이드", duration: 45, exercises: [
-          { name: "스테디 카디오", sets: "30분 Z2-Z3", safe: "대화 가능", desc: "지속성 심폐 운동. 실내 자전거 등 유산소 장비에서 땀이 송글송글 맺히고 숨이 차지만 대화는 유지할 수 있는 일정 템포를 지속합니다." },
+          { name: "스테디 카디오", sets: "30분 (보통~숨찬 강도)", safe: "대화 가능", desc: "지속성 심폐 운동. 실내 자전거 등 유산소 장비에서 땀이 송글송글 맺히고 숨이 차지만 대화는 유지할 수 있는 일정 템포를 지속합니다." },
           { name: "코어 서킷", sets: "10분", safe: "허리 중립", desc: "코어 안정화. 플랭크, 버드독 등으로 구성된 서킷. 운동 중 허리가 바닥으로 주저앉거나 과도하게 아치형으로 꺾이지 않도록 코어 텐션을 꽉 쥐어 유지합니다." },
         ]},
       ]
@@ -811,11 +811,11 @@ function buildPlan(m: Metrics) {
           { name: "마운틴 클라이머", sets: "3 x 40초", safe: "어깨 고정", desc: "코어 및 고강도 유산소. 푸쉬업 자세에서 양다리를 교차하며 가슴 쪽으로 빠르게 당겨 올립니다. 상체가 흔들리지 않게 양손으로 바닥을 밀고 엉덩이 높이를 제어합니다." },
         ]},
         { title: "인터벌 유산소 (HIIT)", duration: 30, exercises: [
-          { name: "타바타 × 4 라운드", sets: "20s 온 / 10s 오프", safe: "Z4 상한", desc: "단시간 고효율 체지방 연소. 버피나 스쿼트 점프 등의 전신 맨몸 운동을 20초간 한계치 속도로 수행한 후 10초간 완전 휴식하는 고강도 트레이닝입니다." },
+          { name: "타바타 × 4 라운드", sets: "20s 온 / 10s 오프", safe: "고강도 안전", desc: "단시간 고효율 체지방 연소. 버피나 스쿼트 점프 등의 전신 맨몸 운동을 20초간 한계치 속도로 수행한 후 10초간 완전 휴식하는 고강도 트레이닝입니다." },
           { name: "쿨다운 스트레칭", sets: "6분", safe: "정적 유지", desc: "근육 이완 및 진정. 격렬히 뭉친 하체와 척추 근육들을 늘려주는 요가/스트레칭 동작을 동작당 20~30초간 길게 유지하면서 깊은 호흡으로 근육을 이완시킵니다." },
         ]},
         { title: "액티브 리커버리", duration: 25, exercises: [
-          { name: "빠르게 걷기", sets: "20분 Z2", safe: "심박 65%", desc: "피로 물질 제거 유산소. 가벼운 땀이 날 정도의 활기찬 걸음으로 일정 시간 걷습니다. 뛰지 않고 관절 충격을 피해 신진대사를 순환시키는 목적입니다." },
+          { name: "빠르게 걷기", sets: "20분 (가벼운 강도)", safe: "심박 65%", desc: "피로 물질 제거 유산소. 가벼운 땀이 날 정도의 활기찬 걸음으로 일정 시간 걷습니다. 뛰지 않고 관절 충격을 피해 신진대사를 순환시키는 목적입니다." },
           { name: "폼롤링", sets: "5분", safe: "통증 회피", desc: "근막 자가 이완(SMR). 폼롤러를 허벅지, 종아리, 등 아래에 두고 천천히 체중을 실어 문질러 줍니다. 통증이 너무 심한 곳은 직접 압박하지 않고 주변부 위주로 풀어냅니다." },
         ]},
       ];
