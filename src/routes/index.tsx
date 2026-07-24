@@ -28,6 +28,8 @@ import {
   UtensilsCrossed,
   Apple,
   Trash2,
+  Video,
+  Film,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -659,6 +661,166 @@ function ZoneChart({ goal }: { goal: Goal }) {
 }
 
 /* ------------------------ Tab 3: Prescription ------------------------- */
+function ExerciseMotionPlayer({ name, desc, safe }: { name: string; desc: string; safe: string }) {
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setStep((s) => (s % 3) + 1);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const stepTitles = [
+    "Step 1: 준비 & 자세 정렬",
+    "Step 2: 동작 수축 및 타겟 자극",
+    "Step 3: 신전 이완 & 호흡 조절",
+  ];
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-primary/30 bg-background/90 backdrop-blur shadow-[0_0_30px_-10px_var(--color-primary)] transition-all animate-in fade-in zoom-in-95 duration-200">
+      {/* 가상 영상 플레이어 상단 바 */}
+      <div className="flex items-center justify-between border-b border-border/50 bg-card/80 px-3.5 py-2 text-xs">
+        <div className="flex items-center gap-2 font-mono">
+          <span className="relative flex h-2 w-2">
+            <span className={`absolute inline-flex h-full w-full animate-ping rounded-full bg-primary ${isPlaying ? "opacity-75" : "opacity-0"}`} />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+          </span>
+          <span className="font-semibold text-primary">LIVE MOTION DEMO</span>
+          <span className="text-muted-foreground/80">· 00:0{step * 3} / 00:15</span>
+        </div>
+        <Badge variant="outline" className="text-[10px] border-accent/40 bg-accent/10 text-accent font-mono gap-1">
+          <Film className="h-3 w-3" /> 60FPS AI GUIDE
+        </Badge>
+      </div>
+
+      {/* 비디오 그래픽 가동 화면 */}
+      <div className="relative flex h-44 w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background/95 via-card/40 to-background/95 p-4">
+        {/* 네온 은은한 방사형 빛 */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/0.15,transparent_75%)]" />
+
+        {/* 3D 스켈레톤 동작 시뮬레이션 아이콘 */}
+        <div className="relative z-10 flex flex-col items-center gap-2">
+          <div className="relative grid h-24 w-24 place-items-center">
+            {/* 자극 펄스 링 */}
+            <div className={`absolute h-20 w-20 rounded-full border border-primary/40 transition-all duration-700 ${isPlaying ? "scale-110 opacity-100" : "scale-90 opacity-40"}`} />
+            <div className={`absolute h-14 w-14 rounded-full bg-primary/10 blur-md transition-all duration-700 ${isPlaying ? "scale-125" : "scale-100"}`} />
+
+            {/* 운동 동작 시뮬레이트 SVG 애니메이션 */}
+            <svg
+              viewBox="0 0 100 100"
+              className={`h-16 w-16 text-primary transition-all duration-700 ease-in-out ${
+                isPlaying
+                  ? step === 2
+                    ? "translate-y-2 scale-95 text-accent drop-shadow-[0_0_12px_var(--color-accent)]"
+                    : step === 3
+                    ? "-translate-y-1 scale-105 drop-shadow-[0_0_12px_var(--color-primary)]"
+                    : "translate-y-0 scale-100"
+                  : ""
+              }`}
+            >
+              {/* 스켈레톤 인체 구조 */}
+              <circle cx="50" cy="18" r="7" className="fill-current" />
+              <path d="M50 25 L50 58" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              <path
+                d={step === 2 ? "M50 32 L28 48 M50 32 L72 48" : "M50 32 L30 42 M50 32 L70 42"}
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                className="transition-all duration-500"
+              />
+              <path
+                d={step === 2 ? "M50 58 L35 82 M50 58 L65 82" : "M50 58 L40 85 M50 58 L60 85"}
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                className="transition-all duration-500"
+              />
+              {/* 자극 타겟 포인트 */}
+              <circle cx="50" cy="38" r="4" className="fill-accent animate-ping" />
+            </svg>
+          </div>
+
+          <div className="text-center">
+            <span className="rounded-full border border-primary/30 bg-primary/20 px-3 py-1 text-xs font-bold text-primary shadow-[0_0_12px_-3px_var(--color-primary)]">
+              {stepTitles[step - 1]}
+            </span>
+          </div>
+        </div>
+
+        {/* 하단 컨트롤 및 단계 탭 */}
+        <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="flex items-center gap-1.5 rounded-md bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors border border-border/50"
+          >
+            {isPlaying ? <Pause className="h-3.5 w-3.5 text-primary" /> : <Play className="h-3.5 w-3.5 text-primary" />}
+            {isPlaying ? "일시정지" : "동작 재생"}
+          </button>
+          <div className="flex gap-1.5">
+            {[1, 2, 3].map((s) => (
+              <button
+                key={s}
+                onClick={() => { setStep(s); setIsPlaying(false); }}
+                className={`h-1.5 rounded-full transition-all ${step === s ? "w-6 bg-primary shadow-[0_0_8px_var(--color-primary)]" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60"}`}
+                aria-label={`Step ${s}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 가이드 설명 */}
+      <div className="border-t border-border/40 bg-card/60 p-3 text-xs space-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> 동작 핵심 요약
+          </div>
+          <span className="text-[10px] text-muted-foreground">안전 기준: {safe}</span>
+        </div>
+        <p className="text-muted-foreground leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function ExerciseItemCard({ ex }: { ex: { name: string; sets: string; safe: string; desc?: string } }) {
+  const [showVideo, setShowVideo] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-background/40 p-3 transition-all hover:border-primary/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-sm font-semibold">{ex.name}</div>
+            <button
+              onClick={() => setShowVideo((v) => !v)}
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all ${
+                showVideo
+                  ? "border border-primary bg-primary text-primary-foreground shadow-[0_0_12px_-3px_var(--color-primary)]"
+                  : "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+              }`}
+            >
+              <Video className="h-3 w-3" />
+              {showVideo ? "영상 닫기" : "🎥 영상 가이드"}
+            </button>
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground/90 font-mono">{ex.sets}</div>
+        </div>
+        <Badge variant="secondary" className="shrink-0 gap-1 border-primary/20 bg-primary/10 text-primary">
+          <ShieldCheck className="h-3 w-3" /> {ex.safe}
+        </Badge>
+      </div>
+
+      {showVideo && (
+        <ExerciseMotionPlayer name={ex.name} desc={ex.desc ?? ""} safe={ex.safe} />
+      )}
+    </div>
+  );
+}
+
 function PrescriptionTab({ metrics, analysis }: { metrics: Metrics; analysis: Analysis }) {
   const plan = useMemo(() => buildPlan(metrics), [metrics]);
   return (
@@ -691,16 +853,7 @@ function PrescriptionTab({ metrics, analysis }: { metrics: Metrics; analysis: An
             </CardHeader>
             <CardContent className="space-y-2">
               {day.exercises.map((ex) => (
-                <div key={ex.name} className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-background/40 p-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">{ex.name}</div>
-                    {ex.desc && <div className="mt-0.5 text-xs text-muted-foreground">{ex.desc}</div>}
-                    <div className="mt-1 text-xs text-muted-foreground/80 font-mono">{ex.sets}</div>
-                  </div>
-                  <Badge variant="secondary" className="shrink-0 gap-1 border-primary/20 bg-primary/10 text-primary">
-                    <ShieldCheck className="h-3 w-3" /> {ex.safe}
-                  </Badge>
-                </div>
+                <ExerciseItemCard key={ex.name} ex={ex} />
               ))}
             </CardContent>
           </Card>
