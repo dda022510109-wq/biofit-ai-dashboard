@@ -426,13 +426,13 @@ function EnrollTab({
             </Select>
           </Field>
           <Field label="나이 (세)">
-            <Input type="number" value={metrics.age} onChange={(e) => update("age", +e.target.value)} />
+            <Input type="number" value={metrics.age === 0 ? "" : metrics.age} onChange={(e) => update("age", e.target.value === "" ? 0 : +e.target.value)} />
           </Field>
           <Field label="키 (cm)">
-            <Input type="number" step="0.1" value={metrics.height} onChange={(e) => update("height", +e.target.value)} />
+            <Input type="number" step="0.1" value={metrics.height === 0 ? "" : metrics.height} onChange={(e) => update("height", e.target.value === "" ? 0 : +e.target.value)} />
           </Field>
           <Field label="몸무게 (kg)">
-            <Input type="number" step="0.1" value={metrics.weight} onChange={(e) => update("weight", +e.target.value)} />
+            <Input type="number" step="0.1" value={metrics.weight === 0 ? "" : metrics.weight} onChange={(e) => update("weight", e.target.value === "" ? 0 : +e.target.value)} />
           </Field>
           <Field label="체지방률 (%)" optional>
             <Input
