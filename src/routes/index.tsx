@@ -495,16 +495,17 @@ function EnrollTab({
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">부상 Zero 원칙</CardTitle>
             </div>
-            <CardDescription>임상 프로토콜 기반의 안전 가이드</CardDescription>
+            <CardTitle className="text-base">다치지 않는 운동 원칙</CardTitle>
+            </div>
+            <CardDescription>누구나 쉽게 따라 할 수 있는 안전 수칙</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              "관절 안전 각도(ROM) 준수 — 무릎 90°, 어깨 외전 80° 이내",
-              "웜업 8분 · 쿨다운 5분 자동 삽입",
-              "심박존 Z2~Z4 이내로 심혈관 부담 최소화",
-              "이전 세션 대비 볼륨 증가 +10% 상한",
+              "무리한 자세는 피하기 — 무릎은 발끝을 넘지 않게, 팔은 어깨 높이까지만 올리세요",
+              "운동 전 8분 준비운동, 끝난 뒤 5분 정리운동을 꼭 챙기세요",
+              "숨이 조금 차지만 대화는 가능한 정도의 강도로 심장에 무리를 주지 마세요",
+              "지난번보다 운동량을 10% 이상 갑자기 늘리지 마세요",
             ].map((t) => (
               <div key={t} className="flex gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
