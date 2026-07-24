@@ -710,15 +710,15 @@ function PrescriptionTab({ metrics, analysis }: { metrics: Metrics; analysis: An
       <div className="space-y-6">
         <Card className="border-border/60 bg-card/70 backdrop-blur">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Warm-up / Cool-down 프로토콜</CardTitle>
+            <CardTitle className="text-base">운동 3단계 순서 가이드</CardTitle>
+            <CardDescription>부상 없는 안전한 운동을 위한 권장 시간</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <ProtocolRow color="bg-accent" label="Dynamic Warm-up" time="8분" note="관절 가동 & 심박 상승" />
-            <ProtocolRow color="bg-primary" label="Main Set" time="변동" note="Z2~Z3 유지" />
-            <ProtocolRow color="bg-[oklch(0.82_0.17_90)]" label="Cool-down" time="5분" note="정적 스트레칭 & 호흡" />
+            <ProtocolRow color="bg-accent" label="1. 준비 운동 (몸풀기)" time="8분" note="관절 부드럽게 풀어주기 & 체온 올리기" />
+            <ProtocolRow color="bg-primary" label="2. 메인 운동" time="본 세트" note="처방된 맞춤 운동 집중 수행" />
+            <ProtocolRow color="bg-[oklch(0.82_0.17_90)]" label="3. 정리 운동 (마무리)" time="5분" note="가벼운 스트레칭 & 호흡 가다듬기" />
           </CardContent>
         </Card>
-
       </div>
     </div>
   );
