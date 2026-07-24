@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HeartPulse,
   Shield,
-  Volume2,
-  VolumeX,
+
   Sparkles,
   Activity,
   Dumbbell,
@@ -147,7 +146,7 @@ function BioFitApp() {
   const { user, loading, login, signup, logout, saveUserData } = useAuth();
   
   const [tab, setTab] = useState("enroll");
-  const [sound, setSound] = useState(true);
+
   
   const defaultMetrics: Metrics = {
     gender: "여성",
@@ -193,7 +192,7 @@ function BioFitApp() {
     const a = analyze(metrics);
     setAnalysis(a);
     setTab("metabolic");
-    if (sound) beep(880, 0.08);
+
 
     if (user) {
       saveUserData({ metrics });
@@ -227,7 +226,7 @@ function BioFitApp() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <BackgroundFX />
-      <TopBar sound={sound} setSound={setSound} user={user} onLogout={logout} />
+      <TopBar user={user} onLogout={logout} />
       <main className="relative mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-card/60 p-1 backdrop-blur sm:grid-cols-5">
@@ -250,13 +249,14 @@ function BioFitApp() {
           <TabsContent value="diary" className="mt-6">
             <DiaryTab
               diary={diary}
+
               onAdd={(entry) => {
                 const updatedDiary = [...diary, entry];
                 setDiary(updatedDiary);
                 if (user) {
                   saveUserData({ diary: updatedDiary });
                 }
-                if (sound) beep(660, 0.08);
+
                 toast.success("세션이 다이어리에 기록되었습니다");
               }}
             />
@@ -269,7 +269,7 @@ function BioFitApp() {
                 const updated = [...meals, entry];
                 setMeals(updated);
                 if (user) saveUserData({ ...(user as any).meals, meals: updated } as any);
-                if (sound) beep(660, 0.08);
+
                 toast.success("식단이 기록되었습니다");
               }}
               onDelete={(idx) => {
@@ -318,13 +318,9 @@ function TabTrigger({ value, icon, label }: { value: string; icon: React.ReactNo
 
 /* ------------------------------- Top Bar ------------------------------ */
 function TopBar({
-  sound,
-  setSound,
   user,
   onLogout,
 }: {
-  sound: boolean;
-  setSound: (v: boolean) => void;
   user?: any;
   onLogout?: () => void;
 }) {
@@ -346,22 +342,7 @@ function TopBar({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 md:flex">
-            {sound ? (
-              <Volume2 className="h-4 w-4 text-primary" />
-            ) : (
-              <VolumeX className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-xs text-muted-foreground">효과음</span>
-            <Switch checked={sound} onCheckedChange={setSound} aria-label="효과음 켬/끔" />
-          </div>
-          <button
-            className="md:hidden rounded-full border border-border/60 bg-card/60 p-2"
-            onClick={() => setSound(!sound)}
-            aria-label="효과음 토글"
-          >
-            {sound ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4" />}
-          </button>
+
           <Badge className="hidden gap-2 border-primary/30 bg-primary/10 px-3 py-1.5 text-primary hover:bg-primary/15 sm:flex">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
@@ -815,121 +796,6 @@ function buildPlan(m: Metrics) {
         ]},
       ];
   return base;
-}
-
-/* ---------------------------- Tab 4: Timer ---------------------------- */
-function TimerTab({ sound }: { sound: boolean }) {
-  const [workSec, setWorkSec] = useState(30);
-  const [restSec, setRestSec] = useState(15);
-  const [rounds, setRounds] = useState(8);
-  const [running, setRunning] = useState(false);
-  const [phase, setPhase] = useState<"work" | "rest">("work");
-  const [round, setRound] = useState(1);
-  const [remaining, setRemaining] = useState(30);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setRemaining((r) => {
-        if (r > 1) return r - 1;
-        // switch phase
-        if (phase === "work") {
-          if (sound) beep(660, 0.12);
-          setPhase("rest");
-          return restSec;
-        }
-        if (round >= rounds) {
-          if (sound) beep(990, 0.25);
-          setRunning(false);
-          setPhase("work");
-          setRound(1);
-          return workSec;
-        }
-        if (sound) beep(880, 0.12);
-        setPhase("work");
-        setRound((n) => n + 1);
-        return workSec;
-      });
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [running, phase, round, workSec, restSec, rounds, sound]);
-
-  const reset = () => {
-    setRunning(false);
-    setPhase("work");
-    setRound(1);
-    setRemaining(workSec);
-  };
-
-  const total = phase === "work" ? workSec : restSec;
-  const pct = (remaining / total) * 100;
-  const isWork = phase === "work";
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-      <Card className={`relative overflow-hidden border-border/60 bg-card/70 backdrop-blur transition-all ${isWork ? "shadow-[0_0_60px_-20px_var(--color-primary)]" : "shadow-[0_0_60px_-20px_var(--color-accent)]"}`}>
-        <div className={`absolute inset-x-0 top-0 h-1 ${isWork ? "bg-primary" : "bg-accent"}`} />
-        <CardContent className="flex flex-col items-center gap-6 py-12">
-          <Badge className={`px-4 py-1.5 text-sm ${isWork ? "border-primary/40 bg-primary/15 text-primary" : "border-accent/40 bg-accent/15 text-accent-foreground"}`}>
-            {isWork ? "🔥 운동 중" : "💧 휴식"}
-          </Badge>
-          <div className="relative grid h-64 w-64 place-items-center">
-            <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90">
-              <circle cx="50" cy="50" r="46" strokeWidth="4" className="fill-none stroke-muted" />
-              <circle
-                cx="50" cy="50" r="46" strokeWidth="4" strokeLinecap="round"
-                className={`fill-none transition-all duration-1000 ${isWork ? "stroke-primary" : "stroke-accent"}`}
-                strokeDasharray={`${(pct / 100) * 289} 289`}
-              />
-            </svg>
-            <div className="text-center">
-              <div className="text-6xl font-bold tabular-nums tracking-tight">{String(remaining).padStart(2, "0")}</div>
-              <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">Round {round} / {rounds}</div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button size="lg" onClick={() => setRunning((r) => !r)} className="gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-[0_0_30px_-8px_var(--color-primary)]">
-              {running ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-              {running ? "일시정지" : "시작"}
-            </Button>
-            <Button size="lg" variant="secondary" onClick={reset} className="gap-2">
-              <RotateCcw className="h-4 w-4" /> 리셋
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60 bg-card/70 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-base">인터벌 설정</CardTitle>
-          <CardDescription>Tabata / HIIT 프리셋</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <NumField label="운동 시간 (초)" value={workSec} onChange={(v) => { setWorkSec(v); if (phase === "work") setRemaining(v); }} />
-          <NumField label="휴식 시간 (초)" value={restSec} onChange={(v) => { setRestSec(v); if (phase === "rest") setRemaining(v); }} />
-          <NumField label="라운드 수" value={rounds} onChange={setRounds} />
-          <Separator className="bg-border/60" />
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { name: "Tabata", w: 20, r: 10, n: 8 },
-              { name: "EMOM", w: 45, r: 15, n: 10 },
-              { name: "HIIT", w: 40, r: 20, n: 6 },
-            ].map((p) => (
-              <Button key={p.name} variant="secondary" size="sm" onClick={() => { setWorkSec(p.w); setRestSec(p.r); setRounds(p.n); reset(); }}>
-                {p.name}
-              </Button>
-            ))}
-          </div>
-          <div className="rounded-lg border border-border/60 bg-background/40 p-3 text-xs text-muted-foreground">
-            {sound ? "🔊 효과음이 활성화되어 각 페이즈 전환 시 알림음이 재생됩니다." : "🔇 효과음이 꺼져있습니다. 상단 헤더에서 활성화하세요."}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }
 
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
@@ -1476,6 +1342,8 @@ function DiaryTab({
 
   const canSubmit = workoutName.trim().length > 0 && workoutMinutesInput >= 1;
 
+
+
   // 월별 이동
   const prevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -1851,21 +1719,4 @@ function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: 
   );
 }
 
-/* ------------------------------ Utilities ----------------------------- */
-function beep(freq = 880, duration = 0.1) {
-  if (typeof window === "undefined") return;
-  try {
-    const AC = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
-    const ctx = new AC();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    gain.gain.value = 0.08;
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    setTimeout(() => { osc.stop(); ctx.close(); }, duration * 1000);
-  } catch {
-    // ignore
-  }
-}
+
