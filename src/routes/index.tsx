@@ -696,55 +696,146 @@ function ExerciseMotionPlayer({ name, desc, safe }: { name: string; desc: string
         </Badge>
       </div>
 
-      {/* 비디오 그래픽 가동 화면 */}
-      <div className="relative flex h-44 w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background/95 via-card/40 to-background/95 p-4">
-        {/* 네온 은은한 방사형 빛 */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/0.15,transparent_75%)]" />
+      {/* 비디오 그래픽 가동 화면 (3D 입체 렌더링 피규어) */}
+      <div className="relative flex h-52 w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background/95 via-card/50 to-background/95 p-4 perspective-[800px]">
+        {/* 3D 스테이지 네온 그리드 & 바닥 원형 파동 */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/0.2,transparent_80%)]" />
+        <div className="absolute bottom-3 h-24 w-60 rounded-full border border-primary/20 bg-primary/5 blur-sm rotate-x-70 animate-pulse" />
 
-        {/* 3D 스켈레톤 동작 시뮬레이션 아이콘 */}
+        {/* 3D 인체 모델 & 동작 시뮬레이션 */}
         <div className="relative z-10 flex flex-col items-center gap-2">
-          <div className="relative grid h-24 w-24 place-items-center">
-            {/* 자극 펄스 링 */}
-            <div className={`absolute h-20 w-20 rounded-full border border-primary/40 transition-all duration-700 ${isPlaying ? "scale-110 opacity-100" : "scale-90 opacity-40"}`} />
-            <div className={`absolute h-14 w-14 rounded-full bg-primary/10 blur-md transition-all duration-700 ${isPlaying ? "scale-125" : "scale-100"}`} />
+          <div className="relative grid h-32 w-32 place-items-center">
+            {/* 3D 타겟 근육 발광 조명 & 3D 뎁스 링 */}
+            <div className={`absolute h-24 w-24 rounded-full border-2 border-primary/40 transition-all duration-700 ${isPlaying ? "scale-110 shadow-[0_0_25px_var(--color-primary)]" : "scale-90 opacity-40"}`} />
+            <div className={`absolute h-16 w-16 rounded-full bg-primary/20 blur-md transition-all duration-700 ${isPlaying ? "scale-125" : "scale-100"}`} />
 
-            {/* 운동 동작 시뮬레이트 SVG 애니메이션 */}
+            {/* 3D 입체 인체 메쉬 SVG (3D 볼륨 셰이딩 & 3D 틸트) */}
             <svg
-              viewBox="0 0 100 100"
-              className={`h-16 w-16 text-primary transition-all duration-700 ease-in-out ${
+              viewBox="0 0 120 120"
+              className={`h-24 w-24 transition-all duration-700 ease-in-out ${
                 isPlaying
                   ? step === 2
-                    ? "translate-y-2 scale-95 text-accent drop-shadow-[0_0_12px_var(--color-accent)]"
+                    ? "rotate-y-12 rotate-x-6 scale-95 drop-shadow-[0_0_16px_var(--color-accent)]"
                     : step === 3
-                    ? "-translate-y-1 scale-105 drop-shadow-[0_0_12px_var(--color-primary)]"
-                    : "translate-y-0 scale-100"
+                    ? "-rotate-y-12 -rotate-x-6 scale-105 drop-shadow-[0_0_16px_var(--color-primary)]"
+                    : "rotate-0 scale-100"
                   : ""
               }`}
             >
-              {/* 스켈레톤 인체 구조 */}
-              <circle cx="50" cy="18" r="7" className="fill-current" />
-              <path d="M50 25 L50 58" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              <defs>
+                {/* 3D 입체 그래디언트 정의 */}
+                <radialGradient id="headGrad" cx="35%" cy="35%" r="65%">
+                  <stop offset="0%" stopColor="var(--color-accent)" />
+                  <stop offset="60%" stopColor="var(--color-primary)" />
+                  <stop offset="100%" stopColor="var(--color-background)" />
+                </radialGradient>
+                <linearGradient id="torso3D" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--color-primary)" />
+                  <stop offset="50%" stopColor="var(--color-accent)" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="var(--color-card)" />
+                </linearGradient>
+                <linearGradient id="limb3D" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="var(--color-primary)" />
+                  <stop offset="100%" stopColor="var(--color-accent)" />
+                </linearGradient>
+                <filter id="glow3D" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              {/* 3D 입체 머리 (Head Volume) */}
+              <circle cx="60" cy="20" r="9" fill="url(#headGrad)" filter="url(#glow3D)" />
+              <ellipse cx="58" cy="18" rx="3" ry="2" fill="#fff" opacity="0.6" />
+
+              {/* 3D 목 & 승모근 메쉬 */}
+              <path d="M56 28 L64 28 L68 34 L52 34 Z" fill="url(#limb3D)" opacity="0.9" />
+
+              {/* 3D 가슴 & 상체 흉곽 (Volumetric Torso Mesh) */}
               <path
-                d={step === 2 ? "M50 32 L28 48 M50 32 L72 48" : "M50 32 L30 42 M50 32 L70 42"}
-                stroke="currentColor"
-                strokeWidth="4"
-                strokeLinecap="round"
+                d={step === 2 ? "M46 34 L74 34 L70 66 L50 66 Z" : "M44 34 L76 34 L72 64 L48 64 Z"}
+                fill="url(#torso3D)"
+                filter="url(#glow3D)"
+                rx="4"
                 className="transition-all duration-500"
               />
-              <path
-                d={step === 2 ? "M50 58 L35 82 M50 58 L65 82" : "M50 58 L40 85 M50 58 L60 85"}
-                stroke="currentColor"
-                strokeWidth="4"
-                strokeLinecap="round"
+
+              {/* 3D 어깨 캡슐 (3D Deltoid Pads) */}
+              <circle cx={step === 2 ? "42" : "40"} cy="36" r="6" fill="url(#headGrad)" />
+              <circle cx={step === 2 ? "78" : "80"} cy="36" r="6" fill="url(#headGrad)" />
+
+              {/* 3D 팔 캡슐 메쉬 (Upper & Lower Arms) */}
+              <rect
+                x={step === 2 ? "26" : "24"}
+                y={step === 2 ? "38" : "36"}
+                width="14"
+                height="8"
+                rx="4"
+                fill="url(#limb3D)"
+                transform={step === 2 ? "rotate(35 33 42)" : "rotate(15 31 40)"}
                 className="transition-all duration-500"
               />
-              {/* 자극 타겟 포인트 */}
-              <circle cx="50" cy="38" r="4" className="fill-accent animate-ping" />
+              <rect
+                x={step === 2 ? "80" : "82"}
+                y={step === 2 ? "38" : "36"}
+                width="14"
+                height="8"
+                rx="4"
+                fill="url(#limb3D)"
+                transform={step === 2 ? "rotate(-35 87 42)" : "rotate(-15 89 40)"}
+                className="transition-all duration-500"
+              />
+
+              {/* 3D 대퇴부 허벅지 근육 (3D Quad Muscle Volume) */}
+              <rect
+                x="46"
+                y="66"
+                width="11"
+                height="24"
+                rx="5.5"
+                fill="url(#torso3D)"
+                transform={step === 2 ? "rotate(20 51 78)" : "rotate(8 51 78)"}
+                className="transition-all duration-500"
+              />
+              <rect
+                x="63"
+                y="66"
+                width="11"
+                height="24"
+                rx="5.5"
+                fill="url(#torso3D)"
+                transform={step === 2 ? "rotate(-20 68 78)" : "rotate(-8 68 78)"}
+                className="transition-all duration-500"
+              />
+
+              {/* 3D 종아리 메쉬 (Lower Legs) */}
+              <rect
+                x={step === 2 ? "36" : "44"}
+                y={step === 2 ? "86" : "88"}
+                width="9"
+                height="22"
+                rx="4.5"
+                fill="url(#limb3D)"
+                className="transition-all duration-500"
+              />
+              <rect
+                x={step === 2 ? "75" : "67"}
+                y={step === 2 ? "86" : "88"}
+                width="9"
+                height="22"
+                rx="4.5"
+                fill="url(#limb3D)"
+                className="transition-all duration-500"
+              />
+
+              {/* 3D 타겟 근육 발광 오라 (Target Pulse Element) */}
+              <circle cx="60" cy="45" r="7" className="fill-accent animate-ping opacity-80" />
+              <circle cx="60" cy="45" r="5" className="fill-accent shadow-[0_0_15px_var(--color-accent)]" />
             </svg>
           </div>
 
           <div className="text-center">
-            <span className="rounded-full border border-primary/30 bg-primary/20 px-3 py-1 text-xs font-bold text-primary shadow-[0_0_12px_-3px_var(--color-primary)]">
+            <span className="rounded-full border border-primary/40 bg-card/90 px-3.5 py-1 text-xs font-bold text-primary shadow-[0_0_15px_-2px_var(--color-primary)]">
               {stepTitles[step - 1]}
             </span>
           </div>
