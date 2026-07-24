@@ -696,146 +696,177 @@ function ExerciseMotionPlayer({ name, desc, safe }: { name: string; desc: string
         </Badge>
       </div>
 
-      {/* 비디오 그래픽 가동 화면 (3D 입체 렌더링 피규어) */}
-      <div className="relative flex h-52 w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background/95 via-card/50 to-background/95 p-4 perspective-[800px]">
-        {/* 3D 스테이지 네온 그리드 & 바닥 원형 파동 */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/0.2,transparent_80%)]" />
-        <div className="absolute bottom-3 h-24 w-60 rounded-full border border-primary/20 bg-primary/5 blur-sm rotate-x-70 animate-pulse" />
+      {/* 홀로그램 3D 비디오 그래픽 가동 화면 (대각선 3D 아이소메트릭 뷰) */}
+      <div className="relative flex h-56 w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background/98 via-[oklch(0.18_0.08_240)]/40 to-background/98 p-4">
+        {/* 홀로그램 3D 바닥 네온 원형 파동 & 아이소메트릭 grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,243,255,0.18),transparent_75%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,243,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,243,255,0.05)_1px,transparent_1px)] bg-[size:16px_16px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-        {/* 3D 인체 모델 & 동작 시뮬레이션 */}
-        <div className="relative z-10 flex flex-col items-center gap-2">
-          <div className="relative grid h-32 w-32 place-items-center">
-            {/* 3D 타겟 근육 발광 조명 & 3D 뎁스 링 */}
-            <div className={`absolute h-24 w-24 rounded-full border-2 border-primary/40 transition-all duration-700 ${isPlaying ? "scale-110 shadow-[0_0_25px_var(--color-primary)]" : "scale-90 opacity-40"}`} />
-            <div className={`absolute h-16 w-16 rounded-full bg-primary/20 blur-md transition-all duration-700 ${isPlaying ? "scale-125" : "scale-100"}`} />
+        {/* 3D 홀로그램 수직 스캔 빔 (Holographic Scan Beam) */}
+        {isPlaying && (
+          <div className="pointer-events-none absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#00f3ff] to-transparent shadow-[0_0_15px_#00f3ff] animate-[bounce_2.5s_infinite_ease-in-out] opacity-70 z-20" />
+        )}
 
-            {/* 3D 입체 인체 메쉬 SVG (3D 볼륨 셰이딩 & 3D 틸트) */}
+        {/* 45도 대각선 3D 아이소메트릭 컨테이너 */}
+        <div className="relative z-10 flex flex-col items-center gap-2 [perspective:1000px]">
+          <div className="relative grid h-36 w-36 place-items-center [transform-style:preserve-3d]">
+            {/* 바닥 3D 홀로그램 조명 대각선 링 */}
+            <div className={`absolute h-28 w-28 rounded-full border border-[#00f3ff]/50 transition-all duration-700 [transform:rotateX(65deg)_rotateY(-25deg)] ${isPlaying ? "scale-110 shadow-[0_0_30px_#00f3ff]" : "scale-95 opacity-40"}`} />
+            <div className={`absolute h-16 w-16 rounded-full bg-[#00f3ff]/20 blur-md transition-all duration-700 [transform:rotateX(65deg)_rotateY(-25deg)] ${isPlaying ? "scale-125" : "scale-100"}`} />
+
+            {/* 대각선 (Diagonal Isometric) 3D 홀로그램 인체 메쉬 SVG */}
             <svg
               viewBox="0 0 120 120"
-              className={`h-24 w-24 transition-all duration-700 ease-in-out ${
+              className={`h-28 w-28 transition-all duration-700 ease-in-out [transform-style:preserve-3d] ${
                 isPlaying
                   ? step === 2
-                    ? "rotate-y-12 rotate-x-6 scale-95 drop-shadow-[0_0_16px_var(--color-accent)]"
+                    ? "[transform:rotateY(-35deg)_rotateX(15deg)_translateY(6px)_scale(0.95)] drop-shadow-[0_0_18px_#00ff9d]"
                     : step === 3
-                    ? "-rotate-y-12 -rotate-x-6 scale-105 drop-shadow-[0_0_16px_var(--color-primary)]"
-                    : "rotate-0 scale-100"
-                  : ""
+                    ? "[transform:rotateY(-35deg)_rotateX(15deg)_translateY(-4px)_scale(1.05)] drop-shadow-[0_0_18px_#00f3ff]"
+                    : "[transform:rotateY(-35deg)_rotateX(15deg)]"
+                  : "[transform:rotateY(-35deg)_rotateX(15deg)]"
               }`}
             >
               <defs>
-                {/* 3D 입체 그래디언트 정의 */}
-                <radialGradient id="headGrad" cx="35%" cy="35%" r="65%">
-                  <stop offset="0%" stopColor="var(--color-accent)" />
-                  <stop offset="60%" stopColor="var(--color-primary)" />
-                  <stop offset="100%" stopColor="var(--color-background)" />
+                {/* 3D 네온 홀로그램 그래디언트 */}
+                <radialGradient id="holoHead" cx="35%" cy="35%" r="65%">
+                  <stop offset="0%" stopColor="#00ff9d" />
+                  <stop offset="70%" stopColor="#00f3ff" />
+                  <stop offset="100%" stopColor="rgba(0,243,255,0.2)" />
                 </radialGradient>
-                <linearGradient id="torso3D" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--color-primary)" />
-                  <stop offset="50%" stopColor="var(--color-accent)" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="var(--color-card)" />
+                <linearGradient id="holoTorso" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00f3ff" stopOpacity="0.9" />
+                  <stop offset="50%" stopColor="#00ff9d" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="#003b5c" stopOpacity="0.8" />
                 </linearGradient>
-                <linearGradient id="limb3D" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="var(--color-primary)" />
-                  <stop offset="100%" stopColor="var(--color-accent)" />
+                <linearGradient id="holoLimb" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#00f3ff" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#00ff9d" stopOpacity="0.85" />
                 </linearGradient>
-                <filter id="glow3D" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
+                <filter id="holoGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
               </defs>
 
-              {/* 3D 입체 머리 (Head Volume) */}
-              <circle cx="60" cy="20" r="9" fill="url(#headGrad)" filter="url(#glow3D)" />
-              <ellipse cx="58" cy="18" rx="3" ry="2" fill="#fff" opacity="0.6" />
+              {/* 3D 홀로그램 관절 연결 그리드 라인 */}
+              <line x1="60" y1="20" x2="60" y2="60" stroke="#00f3ff" strokeWidth="1" strokeDasharray="2 2" opacity="0.6" />
+              <line x1="45" y1="36" x2="75" y2="36" stroke="#00f3ff" strokeWidth="1" strokeDasharray="2 2" opacity="0.6" />
 
-              {/* 3D 목 & 승모근 메쉬 */}
-              <path d="M56 28 L64 28 L68 34 L52 34 Z" fill="url(#limb3D)" opacity="0.9" />
+              {/* 3D 홀로그램 머리 (Head Mesh) */}
+              <circle cx="60" cy="20" r="9" fill="url(#holoHead)" filter="url(#holoGlow)" />
+              <ellipse cx="57" cy="18" rx="3.5" ry="2" fill="#ffffff" opacity="0.8" />
 
-              {/* 3D 가슴 & 상체 흉곽 (Volumetric Torso Mesh) */}
+              {/* 3D 홀로그램 가슴 & 상체 (대각선 측면 3D 뎁스 흉곽) */}
               <path
-                d={step === 2 ? "M46 34 L74 34 L70 66 L50 66 Z" : "M44 34 L76 34 L72 64 L48 64 Z"}
-                fill="url(#torso3D)"
-                filter="url(#glow3D)"
-                rx="4"
+                d={step === 2 ? "M45 34 L75 34 L69 66 L47 66 Z" : "M43 34 L77 34 L71 64 L45 64 Z"}
+                fill="url(#holoTorso)"
+                stroke="#00f3ff"
+                strokeWidth="1"
+                strokeOpacity="0.8"
+                filter="url(#holoGlow)"
                 className="transition-all duration-500"
               />
+              {/* 홀로그램 와이어프레임 늑골 와이어 */}
+              <path d="M48 42 L72 42 M50 50 L70 50 M52 58 L68 58" stroke="#00f3ff" strokeWidth="0.8" strokeDasharray="3 2" opacity="0.7" />
 
-              {/* 3D 어깨 캡슐 (3D Deltoid Pads) */}
-              <circle cx={step === 2 ? "42" : "40"} cy="36" r="6" fill="url(#headGrad)" />
-              <circle cx={step === 2 ? "78" : "80"} cy="36" r="6" fill="url(#headGrad)" />
+              {/* 3D 대각선 어깨 구체 (Isometric Shoulder Spheres) */}
+              <circle cx={step === 2 ? "40" : "38"} cy="36" r="6.5" fill="url(#holoHead)" />
+              <circle cx={step === 2 ? "79" : "81"} cy="36" r="6.5" fill="url(#holoHead)" />
 
-              {/* 3D 팔 캡슐 메쉬 (Upper & Lower Arms) */}
-              <rect
-                x={step === 2 ? "26" : "24"}
-                y={step === 2 ? "38" : "36"}
-                width="14"
-                height="8"
-                rx="4"
-                fill="url(#limb3D)"
-                transform={step === 2 ? "rotate(35 33 42)" : "rotate(15 31 40)"}
-                className="transition-all duration-500"
-              />
-              <rect
-                x={step === 2 ? "80" : "82"}
-                y={step === 2 ? "38" : "36"}
-                width="14"
-                height="8"
-                rx="4"
-                fill="url(#limb3D)"
-                transform={step === 2 ? "rotate(-35 87 42)" : "rotate(-15 89 40)"}
-                className="transition-all duration-500"
-              />
+              {/* 3D 대각선 양 팔 메쉬 (Front & Back Arms Offset) */}
+              <g className="transition-all duration-500">
+                {/* 앞쪽 왼팔 */}
+                <rect
+                  x={step === 2 ? "24" : "21"}
+                  y={step === 2 ? "38" : "36"}
+                  width="15"
+                  height="8"
+                  rx="4"
+                  fill="url(#holoLimb)"
+                  stroke="#00ff9d"
+                  strokeWidth="0.7"
+                  transform={step === 2 ? "rotate(40 31 42)" : "rotate(20 28 40)"}
+                />
+                {/* 뒤쪽 오른팔 (대각선 퍼스펙티브 뎁스) */}
+                <rect
+                  x={step === 2 ? "81" : "83"}
+                  y={step === 2 ? "38" : "36"}
+                  width="15"
+                  height="8"
+                  rx="4"
+                  fill="url(#holoLimb)"
+                  stroke="#00f3ff"
+                  strokeWidth="0.7"
+                  opacity="0.85"
+                  transform={step === 2 ? "rotate(-40 88 42)" : "rotate(-20 90 40)"}
+                />
+              </g>
 
-              {/* 3D 대퇴부 허벅지 근육 (3D Quad Muscle Volume) */}
+              {/* 3D 대각선 허벅지 & 무릎 관절 (3D Quad & Knees Angle) */}
               <rect
-                x="46"
+                x="45"
                 y="66"
-                width="11"
-                height="24"
-                rx="5.5"
-                fill="url(#torso3D)"
-                transform={step === 2 ? "rotate(20 51 78)" : "rotate(8 51 78)"}
+                width="12"
+                height="25"
+                rx="6"
+                fill="url(#holoTorso)"
+                stroke="#00f3ff"
+                strokeWidth="0.8"
+                transform={step === 2 ? "rotate(26 51 78)" : "rotate(10 51 78)"}
                 className="transition-all duration-500"
               />
               <rect
-                x="63"
+                x="64"
                 y="66"
-                width="11"
-                height="24"
-                rx="5.5"
-                fill="url(#torso3D)"
-                transform={step === 2 ? "rotate(-20 68 78)" : "rotate(-8 68 78)"}
+                width="12"
+                height="25"
+                rx="6"
+                fill="url(#holoTorso)"
+                stroke="#00f3ff"
+                strokeWidth="0.8"
+                opacity="0.85"
+                transform={step === 2 ? "rotate(-26 70 78)" : "rotate(-10 70 78)"}
                 className="transition-all duration-500"
               />
 
-              {/* 3D 종아리 메쉬 (Lower Legs) */}
+              {/* 3D 무릎 관절 캡슐 */}
+              <circle cx={step === 2 ? "40" : "48"} cy="89" r="4.5" fill="#00ff9d" />
+              <circle cx={step === 2 ? "77" : "69"} cy="89" r="4.5" fill="#00f3ff" opacity="0.85" />
+
+              {/* 3D 대각선 종아리 메쉬 (Lower Leg Segments) */}
               <rect
-                x={step === 2 ? "36" : "44"}
-                y={step === 2 ? "86" : "88"}
-                width="9"
-                height="22"
+                x={step === 2 ? "34" : "43"}
+                y={step === 2 ? "89" : "90"}
+                width="9.5"
+                height="23"
                 rx="4.5"
-                fill="url(#limb3D)"
+                fill="url(#holoLimb)"
+                stroke="#00ff9d"
+                strokeWidth="0.7"
                 className="transition-all duration-500"
               />
               <rect
-                x={step === 2 ? "75" : "67"}
-                y={step === 2 ? "86" : "88"}
-                width="9"
-                height="22"
+                x={step === 2 ? "76" : "67"}
+                y={step === 2 ? "89" : "90"}
+                width="9.5"
+                height="23"
                 rx="4.5"
-                fill="url(#limb3D)"
+                fill="url(#holoLimb)"
+                stroke="#00f3ff"
+                strokeWidth="0.7"
+                opacity="0.85"
                 className="transition-all duration-500"
               />
 
-              {/* 3D 타겟 근육 발광 오라 (Target Pulse Element) */}
-              <circle cx="60" cy="45" r="7" className="fill-accent animate-ping opacity-80" />
-              <circle cx="60" cy="45" r="5" className="fill-accent shadow-[0_0_15px_var(--color-accent)]" />
+              {/* 3D 홀로그램 자극 타겟 펄스 포인트 (Hologram Muscle Focus Target) */}
+              <circle cx="58" cy="46" r="8" className="fill-[#00ff9d] animate-ping opacity-75" />
+              <circle cx="58" cy="46" r="5" fill="#00ff9d" className="shadow-[0_0_20px_#00ff9d]" />
             </svg>
           </div>
 
           <div className="text-center">
-            <span className="rounded-full border border-primary/40 bg-card/90 px-3.5 py-1 text-xs font-bold text-primary shadow-[0_0_15px_-2px_var(--color-primary)]">
+            <span className="rounded-full border border-[#00f3ff]/50 bg-card/90 px-3.5 py-1 text-xs font-bold text-[#00f3ff] shadow-[0_0_20px_rgba(0,243,255,0.4)]">
               {stepTitles[step - 1]}
             </span>
           </div>
