@@ -495,8 +495,7 @@ function EnrollTab({
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
-            </div>
-            <CardTitle className="text-base">다치지 않는 운동 원칙</CardTitle>
+              <CardTitle className="text-base">다치지 않는 운동 원칙</CardTitle>
             </div>
             <CardDescription>누구나 쉽게 따라 할 수 있는 안전 수칙</CardDescription>
           </CardHeader>
