@@ -1373,9 +1373,9 @@ function DiaryTab({
   diary: { date: string; workout: string; minutes: number; calories: number }[];
   onAdd: (e: { date: string; workout: string; minutes: number; calories: number }) => void;
 }) {
-  // 멀티 운동 선택 상태: { 운동명: 소요분 } — 0이면 미선택
-  const WORKOUT_LIST = ["전신 서킷", "인터벌 러닝", "상체 근력", "하체 근력", "모빌리티 & 코어", "액티브 리커버리"];
-  const [activeWorkouts, setActiveWorkouts] = useState<Record<string, number>>({});
+  // 직접 입력형 운동 기록 상태
+  const [workoutName, setWorkoutName] = useState("");
+  const [workoutMinutesInput, setWorkoutMinutesInput] = useState<number>(30);
 
   // 달력 관련 상태
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -1460,41 +1460,21 @@ function DiaryTab({
 
   const totalDays = workedDates.size;
 
-  // 체크 토글 핸들러
-  const toggleWorkout = (name: string) => {
-    setActiveWorkouts((prev) => {
-      const next = { ...prev };
-      if (next[name] !== undefined) {
-        delete next[name];
-      } else {
-        next[name] = 30; // 기본 30분
-      }
-      return next;
-    });
-  };
-
-  // 개별 운동 소요 시간 변경
-  const setWorkoutMinutes = (name: string, mins: number) => {
-    setActiveWorkouts((prev) => ({ ...prev, [name]: Math.max(1, mins) }));
-  };
-
-  // 일괄 기록: 선택된 모든 운동 추가
+  // 기록 추가
   const addAll = () => {
-    const entries = Object.entries(activeWorkouts);
-    if (entries.length === 0) return;
-    entries.forEach(([name, mins]) => {
-      onAdd({
-        date: selectedDate,
-        workout: name,
-        minutes: mins,
-        calories: Math.round(mins * 9.5),
-      });
+    const name = workoutName.trim();
+    if (!name || workoutMinutesInput < 1) return;
+    onAdd({
+      date: selectedDate,
+      workout: name,
+      minutes: workoutMinutesInput,
+      calories: Math.round(workoutMinutesInput * 9.5),
     });
-    // 기록 후 초기화
-    setActiveWorkouts({});
+    setWorkoutName("");
+    setWorkoutMinutesInput(30);
   };
 
-  const checkedCount = Object.keys(activeWorkouts).length;
+  const canSubmit = workoutName.trim().length > 0 && workoutMinutesInput >= 1;
 
   // 월별 이동
   const prevMonth = () => {
