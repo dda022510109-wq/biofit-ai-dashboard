@@ -1769,92 +1769,53 @@ function DiaryTab({
             />
           </div>
 
-          {/* 멀티 운동 체크리스트 */}
+          {/* 운동 이름 직접 입력 */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              운동 종류 <span className="ml-1 text-primary font-semibold">(복수 선택 가능)</span>
-            </Label>
-            <div className="space-y-2">
-              {WORKOUT_LIST.map((name) => {
-                const checked = activeWorkouts[name] !== undefined;
-                return (
-                  <div
-                    key={name}
-                    className={`flex items-center gap-3 rounded-lg border p-2.5 transition-all cursor-pointer select-none ${
-                      checked
-                        ? "border-primary/60 bg-primary/10 shadow-[0_0_12px_-4px_var(--color-primary)]"
-                        : "border-border/40 bg-background/20 hover:bg-muted/20"
-                    }`}
-                    onClick={() => toggleWorkout(name)}
-                  >
-                    {/* 체크박스 커스텀 */}
-                    <div
-                      className={`h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-all ${
-                        checked
-                          ? "border-primary bg-primary"
-                          : "border-border/60 bg-background/40"
-                      }`}
-                    >
-                      {checked && (
-                        <svg viewBox="0 0 12 10" className="h-3 w-3 fill-primary-foreground">
-                          <polyline points="1,5 4.5,9 11,1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
+            <Label className="text-xs text-muted-foreground">운동 종류</Label>
+            <Input
+              type="text"
+              value={workoutName}
+              onChange={(e) => setWorkoutName(e.target.value)}
+              placeholder="예: 스쿼트, 러닝, 요가 등 직접 입력"
+              className="w-full bg-background/40"
+            />
+          </div>
 
-                    {/* 운동 이름 */}
-                    <span className={`flex-1 text-sm font-medium ${checked ? "text-primary" : "text-foreground/80"}`}>
-                      {name}
-                    </span>
-
-                    {/* 소요 시간 입력 (체크된 경우에만 활성화) */}
-                    {checked && (
-                      <div
-                        className="flex items-center gap-1.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          className="h-6 w-6 rounded bg-primary/20 text-primary hover:bg-primary/30 flex items-center justify-center text-sm font-bold transition-colors"
-                          onClick={() => setWorkoutMinutes(name, (activeWorkouts[name] || 30) - 5)}
-                          aria-label="5분 감소"
-                        >−</button>
-                        <input
-                          type="number"
-                          min={1}
-                          value={activeWorkouts[name]}
-                          onChange={(e) => setWorkoutMinutes(name, parseInt(e.target.value) || 1)}
-                          className="w-12 rounded border border-primary/30 bg-background/60 px-1 py-0.5 text-center text-sm font-mono text-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                          aria-label={`${name} 소요 시간`}
-                        />
-                        <button
-                          className="h-6 w-6 rounded bg-primary/20 text-primary hover:bg-primary/30 flex items-center justify-center text-sm font-bold transition-colors"
-                          onClick={() => setWorkoutMinutes(name, (activeWorkouts[name] || 30) + 5)}
-                          aria-label="5분 증가"
-                        >+</button>
-                        <span className="text-xs text-muted-foreground">분</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          {/* 소요 시간 입력 */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">소요 시간 (분)</Label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="h-9 w-9 rounded bg-primary/20 text-primary hover:bg-primary/30 flex items-center justify-center text-lg font-bold transition-colors"
+                onClick={() => setWorkoutMinutesInput((m) => Math.max(1, m - 5))}
+                aria-label="5분 감소"
+              >−</button>
+              <input
+                type="number"
+                min={1}
+                value={workoutMinutesInput}
+                onChange={(e) => setWorkoutMinutesInput(Math.max(1, parseInt(e.target.value) || 1))}
+                className="flex-1 rounded border border-primary/30 bg-background/60 px-2 py-1.5 text-center text-sm font-mono text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                aria-label="소요 시간"
+              />
+              <button
+                type="button"
+                className="h-9 w-9 rounded bg-primary/20 text-primary hover:bg-primary/30 flex items-center justify-center text-lg font-bold transition-colors"
+                onClick={() => setWorkoutMinutesInput((m) => m + 5)}
+                aria-label="5분 증가"
+              >+</button>
+              <span className="text-xs text-muted-foreground">분</span>
             </div>
           </div>
 
-          {/* 선택된 운동 요약 */}
-          {checkedCount > 0 && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1">
-              <div className="text-xs font-semibold text-primary mb-1.5">📋 기록 예정 ({checkedCount}개 운동)</div>
-              {Object.entries(activeWorkouts).map(([name, mins]) => (
-                <div key={name} className="flex justify-between text-xs text-muted-foreground">
-                  <span>{name}</span>
-                  <span className="font-mono text-primary">{mins}분 · {Math.round(mins * 9.5)} kcal</span>
-                </div>
-              ))}
-              <div className="border-t border-primary/20 mt-1.5 pt-1.5 flex justify-between text-xs font-bold text-primary">
-                <span>합계</span>
-                <span className="font-mono">
-                  {Object.values(activeWorkouts).reduce((s, m) => s + m, 0)}분 ·{" "}
-                  {Object.values(activeWorkouts).reduce((s, m) => s + Math.round(m * 9.5), 0)} kcal
+          {/* 미리보기 */}
+          {canSubmit && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">{workoutName.trim()}</span>
+                <span className="font-mono text-primary font-semibold">
+                  {workoutMinutesInput}분 · {Math.round(workoutMinutesInput * 9.5)} kcal
                 </span>
               </div>
             </div>
@@ -1862,11 +1823,11 @@ function DiaryTab({
 
           <Button
             onClick={addAll}
-            disabled={checkedCount === 0}
+            disabled={!canSubmit}
             className="w-full gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-[0_0_30px_-8px_var(--color-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {checkedCount === 0 ? "운동을 선택해 주세요" : `${checkedCount}개 운동 일괄 기록`}
+            {canSubmit ? "운동 기록 추가" : "운동 이름을 입력해 주세요"}
           </Button>
 
           <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-primary">
